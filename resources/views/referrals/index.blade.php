@@ -1,4 +1,4 @@
-    @extends('layouts.app')
+@extends('layouts.app')
 
 @section('page-title', 'Referrals')
 
@@ -36,7 +36,7 @@
                                 <div class="card-body">
                                     <h5 class="card-title">Level A (Direct)</h5>
                                     <p class="card-text">10% Commission</p>
-                                    <p class="card-text"><strong>{{ $referralsByLevel[1] ?? []|count }} Referrals</strong></p>
+                                    <p class="card-text"><strong>{{ count($referralsByLevel[1] ?? []) }} Referrals</strong></p>
                                 </div>
                             </div>
                         </div>
@@ -45,7 +45,7 @@
                                 <div class="card-body">
                                     <h5 class="card-title">Level B</h5>
                                     <p class="card-text">5% Commission</p>
-                                    <p class="card-text"><strong>{{ $referralsByLevel[2] ?? []|count }} Referrals</strong></p>
+                                    <p class="card-text"><strong>{{ count($referralsByLevel[2] ?? []) }} Referrals</strong></p>
                                 </div>
                             </div>
                         </div>
@@ -54,7 +54,7 @@
                                 <div class="card-body">
                                     <h5 class="card-title">Level C</h5>
                                     <p class="card-text">3% Commission</p>
-                                    <p class="card-text"><strong>{{ $referralsByLevel[3] ?? []|count }} Referrals</strong></p>
+                                    <p class="card-text"><strong>{{ count($referralsByLevel[3] ?? []) }} Referrals</strong></p>
                                 </div>
                             </div>
                         </div>
@@ -95,7 +95,7 @@
                                 Direct Referrals
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ $referralsByLevel[1] ?? []|count }}
+                                {{ count($referralsByLevel[1] ?? []) }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -159,17 +159,17 @@
                         <ul class="nav nav-tabs" id="referralTabs" role="tablist">
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link active" id="level1-tab" data-bs-toggle="tab" data-bs-target="#level1" type="button" role="tab" aria-controls="level1" aria-selected="true">
-                                    Level A ({{ $referralsByLevel[1] ?? []|count }})
+                                    Level A ({{ count($referralsByLevel[1] ?? []) }})
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="level2-tab" data-bs-toggle="tab" data-bs-target="#level2" type="button" role="tab" aria-controls="level2" aria-selected="false">
-                                    Level B ({{ $referralsByLevel[2] ?? []|count }})
+                                    Level B ({{ count($referralsByLevel[2] ?? []) }})
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="level3-tab" data-bs-toggle="tab" data-bs-target="#level3" type="button" role="tab" aria-controls="level3" aria-selected="false">
-                                    Level C ({{ $referralsByLevel[3] ?? []|count }})
+                                    Level C ({{ count($referralsByLevel[3] ?? []) }})
                                 </button>
                             </li>
                         </ul>

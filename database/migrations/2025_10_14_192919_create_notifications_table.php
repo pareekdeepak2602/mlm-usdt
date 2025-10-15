@@ -4,26 +4,23 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateNotificationsTable extends Migration
+return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('title');
             $table->text('message');
             $table->string('type')->default('info');
             $table->boolean('is_read')->default(false);
-            $table->timestamps();  // adds created_at and updated_at
-
-            // If you want, add foreign key constraint
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->timestamps(); // 👈 adds created_at and updated_at
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('notifications');
     }
-}
+};

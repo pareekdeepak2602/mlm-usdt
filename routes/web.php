@@ -7,11 +7,11 @@ use App\Http\Controllers\InvestmentController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\WithdrawalController;
+use App\Http\Controllers\LandingPageController;
 
 // Authentication Routes
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+Route::get('/', [LandingPageController::class, 'index'])->name('landing');
+Route::post('/contact', [LandingPageController::class, 'submitContact'])->name('contact.submit');
 
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);

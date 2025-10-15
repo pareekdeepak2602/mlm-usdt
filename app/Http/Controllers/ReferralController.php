@@ -24,8 +24,8 @@ class ReferralController extends Controller
             }
             $referralsByLevel[$level][] = $referral;
         }
-        
-        return view('referrals.index', compact('referralLink', 'referralsByLevel'));
+       
+        return view('referrals.index', compact('referralLink', 'referralsByLevel', 'referrals'));
     }
     
     public function tree()

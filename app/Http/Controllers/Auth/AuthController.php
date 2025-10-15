@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use App\Services\ReferralService;
+
 
 class AuthController extends Controller
 {
@@ -59,12 +61,12 @@ class AuthController extends Controller
         }
         
         // Send welcome notification
-        Notification::createNotification(
-            $user->id,
-            'Welcome to MLM Platform',
-            'Your account has been created successfully. Please deposit funds to activate your account.',
-            'info'
-        );
+        // Notification::createNotification(
+        //     $user->id,
+        //     'Welcome to MLM Platform',
+        //     'Your account has been created successfully. Please deposit funds to activate your account.',
+        //     'info'
+        // );
         
         Auth::login($user);
         
