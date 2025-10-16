@@ -115,8 +115,8 @@
                 </div>
                 
                 <div class="flex space-x-4">
-                    <a href="/login" class="px-4 py-2 text-purple-600 border border-purple-600 rounded-lg hover:bg-purple-50 transition">Login</a>
-                    <a href="/register" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">Register</a>
+                    <a href="{{ route('login') }}" class="px-4 py-2 text-purple-600 border border-purple-600 rounded-lg hover:bg-purple-50 transition">Login</a>
+                    <a href="{{ route('register') }}" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">Register</a>
                 </div>
                 
                 <!-- Mobile menu button -->
