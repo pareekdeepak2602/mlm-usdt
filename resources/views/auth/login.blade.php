@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Login - MLM + USDT Trading Platform')
+@section('title', 'Login - Smart Choice MLM Platform')
 
 @section('content')
 <div class="login-container">
@@ -8,7 +8,7 @@
         <div class="col-lg-6 login-image d-none d-lg-block">
             <div class="login-image-content">
                 <div class="logo">
-                    <i class="fas fa-coins me-2"></i>MLM Platform
+                    <i class="fas fa-gem me-2"></i>Smart Choice
                 </div>
                 <h2 class="mb-4">Welcome Back</h2>
                 <p class="mb-4">Sign in to access your account and continue your journey to financial freedom.</p>

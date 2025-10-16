@@ -74,6 +74,23 @@
                 padding: 60px 0;
             }
         }
+        .table-container {
+            overflow-x: auto;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -95,12 +112,11 @@
                     <a href="#investment-plans" class="nav-link text-gray-700 hover:text-purple-600 transition">Investment Plans</a>
                     <a href="#calculator" class="nav-link text-gray-700 hover:text-purple-600 transition">Calculator</a>
                     <a href="#referral-program" class="nav-link text-gray-700 hover:text-purple-600 transition">Referral Program</a>
-                    <a href="#contact" class="nav-link text-gray-700 hover:text-purple-600 transition">Contact</a>
                 </div>
                 
                 <div class="flex space-x-4">
-                    <a href="{{ route('login') }}" class="px-4 py-2 text-purple-600 border border-purple-600 rounded-lg hover:bg-purple-50 transition">Login</a>
-                    <a href="{{ route('register') }}" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">Register</a>
+                    <a href="/login" class="px-4 py-2 text-purple-600 border border-purple-600 rounded-lg hover:bg-purple-50 transition">Login</a>
+                    <a href="/register" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">Register</a>
                 </div>
                 
                 <!-- Mobile menu button -->
@@ -119,7 +135,6 @@
                 <a href="#investment-plans" class="block py-2 text-gray-700 hover:text-purple-600">Investment Plans</a>
                 <a href="#calculator" class="block py-2 text-gray-700 hover:text-purple-600">Calculator</a>
                 <a href="#referral-program" class="block py-2 text-gray-700 hover:text-purple-600">Referral Program</a>
-                <a href="#contact" class="block py-2 text-gray-700 hover:text-purple-600">Contact</a>
             </div>
         </div>
     </nav>
@@ -132,7 +147,7 @@
                     <h1 class="text-4xl md:text-5xl font-bold mb-6">Smart Investment with Smart Choice</h1>
                     <p class="text-xl mb-8">Invest in USDT BEP20 and earn daily returns with our secure and transparent investment platform. Join thousands of satisfied investors today.</p>
                     <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                        <a href="{{ route('register') }}" class="px-8 py-3 bg-white text-purple-600 rounded-lg font-semibold hover:bg-gray-100 transition text-center">Get Started</a>
+                        <a href="#" class="px-8 py-3 bg-white text-purple-600 rounded-lg font-semibold hover:bg-gray-100 transition text-center">Get Started</a>
                         <a href="#investment-plans" class="px-8 py-3 border border-white rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition text-center">View Plans</a>
                     </div>
                 </div>
@@ -179,7 +194,7 @@
                                 <span>Total Return: 30% (30 Days)</span>
                             </li>
                         </ul>
-                        <a href="{{ route('register') }}" class="block w-full py-3 bg-purple-600 text-white rounded-lg text-center hover:bg-purple-700 transition">Choose Plan</a>
+                        <a href="#" class="block w-full py-3 bg-purple-600 text-white rounded-lg text-center hover:bg-purple-700 transition">Choose Plan</a>
                     </div>
                 </div>
                 
@@ -209,7 +224,7 @@
                                 <span>Total Return: 54% (30 Days)</span>
                             </li>
                         </ul>
-                        <a href="{{ route('register') }}" class="block w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg text-center hover:opacity-90 transition">Choose Plan</a>
+                        <a href="#" class="block w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg text-center hover:opacity-90 transition">Choose Plan</a>
                     </div>
                 </div>
                 
@@ -238,8 +253,77 @@
                                 <span>Total Return: 63% (30 Days)</span>
                             </li>
                         </ul>
-                        <a href="{{ route('register') }}" class="block w-full py-3 bg-purple-600 text-white rounded-lg text-center hover:bg-purple-700 transition">Choose Plan</a>
+                        <a href="#" class="block w-full py-3 bg-purple-600 text-white rounded-lg text-center hover:bg-purple-700 transition">Choose Plan</a>
                     </div>
+                </div>
+            </div>
+            
+            <!-- Level Requirements Table -->
+            <div class="mt-16 bg-white rounded-lg shadow-lg p-8">
+                <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">Level Requirements & Daily Income</h3>
+                <div class="table-container custom-scrollbar">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b">
+                                <th class="py-3 px-4 font-semibold text-gray-700">Level</th>
+                                <th class="py-3 px-4 font-semibold text-gray-700">Per Day %</th>
+                                <th class="py-3 px-4 font-semibold text-gray-700">A</th>
+                                <th class="py-3 px-4 font-semibold text-gray-700">B + C</th>
+                                <th class="py-3 px-4 font-semibold text-gray-700">Asset Hold</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="py-3 px-4">0</td>
+                                <td class="py-3 px-4">1.00%</td>
+                                <td class="py-3 px-4">-</td>
+                                <td class="py-3 px-4">-</td>
+                                <td class="py-3 px-4">50</td>
+                            </tr>
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="py-3 px-4">1</td>
+                                <td class="py-3 px-4">1.80%</td>
+                                <td class="py-3 px-4">-</td>
+                                <td class="py-3 px-4">-</td>
+                                <td class="py-3 px-4">100</td>
+                            </tr>
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="py-3 px-4">2</td>
+                                <td class="py-3 px-4">2.10%</td>
+                                <td class="py-3 px-4">3</td>
+                                <td class="py-3 px-4">2</td>
+                                <td class="py-3 px-4">300</td>
+                            </tr>
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="py-3 px-4">3</td>
+                                <td class="py-3 px-4">2.40%</td>
+                                <td class="py-3 px-4">5</td>
+                                <td class="py-3 px-4">3</td>
+                                <td class="py-3 px-4">700</td>
+                            </tr>
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="py-3 px-4">4</td>
+                                <td class="py-3 px-4">2.70%</td>
+                                <td class="py-3 px-4">7</td>
+                                <td class="py-3 px-4">5</td>
+                                <td class="py-3 px-4">1500</td>
+                            </tr>
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="py-3 px-4">5</td>
+                                <td class="py-3 px-4">3.00%</td>
+                                <td class="py-3 px-4">10</td>
+                                <td class="py-3 px-4">7</td>
+                                <td class="py-3 px-4">3500</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="py-3 px-4">6</td>
+                                <td class="py-3 px-4">3.30%</td>
+                                <td class="py-3 px-4">15</td>
+                                <td class="py-3 px-4">10</td>
+                                <td class="py-3 px-4">7000</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -264,6 +348,10 @@
                                 <option value="0">Level 0 - Starter Plan (1% Daily)</option>
                                 <option value="1">Level 1 - Growth Plan (1.8% Daily)</option>
                                 <option value="2">Level 2 - Premium Plan (2.1% Daily)</option>
+                                <option value="3">Level 3 - Advanced Plan (2.4% Daily)</option>
+                                <option value="4">Level 4 - Professional Plan (2.7% Daily)</option>
+                                <option value="5">Level 5 - Expert Plan (3% Daily)</option>
+                                <option value="6">Level 6 - Elite Plan (3.3% Daily)</option>
                             </select>
                         </div>
                         
@@ -357,11 +445,60 @@
                     </div>
                 </div>
                 
+                <!-- Level Income Table -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Level Income Percentages</h3>
+                    <div class="table-container custom-scrollbar">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="border-b">
+                                    <th class="py-3 px-4 font-semibold text-gray-700">Level</th>
+                                    <th class="py-3 px-4 font-semibold text-gray-700">A (%)</th>
+                                    <th class="py-3 px-4 font-semibold text-gray-700">B (%)</th>
+                                    <th class="py-3 px-4 font-semibold text-gray-700">C (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 px-4">2</td>
+                                    <td class="py-3 px-4">12%</td>
+                                    <td class="py-3 px-4">5%</td>
+                                    <td class="py-3 px-4">3%</td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 px-4">3</td>
+                                    <td class="py-3 px-4">13%</td>
+                                    <td class="py-3 px-4">6%</td>
+                                    <td class="py-3 px-4">4%</td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 px-4">4</td>
+                                    <td class="py-3 px-4">14%</td>
+                                    <td class="py-3 px-4">7%</td>
+                                    <td class="py-3 px-4">5%</td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 px-4">5</td>
+                                    <td class="py-3 px-4">15%</td>
+                                    <td class="py-3 px-4">8%</td>
+                                    <td class="py-3 px-4">6%</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-3 px-4">6</td>
+                                    <td class="py-3 px-4">16%</td>
+                                    <td class="py-3 px-4">9%</td>
+                                    <td class="py-3 px-4">7%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
                 <div class="bg-purple-50 rounded-lg p-6">
                     <h3 class="text-xl font-semibold mb-3">How It Works</h3>
                     <p class="text-gray-700 mb-4">When someone registers using your referral link and makes a deposit, you earn a commission based on their level in your referral network. Commissions are calculated daily and credited to your account automatically.</p>
                     <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                        <a href="{{ route('register') }}" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-center">Join Now</a>
+                        <a href="#" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-center">Join Now</a>
                         <a href="#contact" class="px-6 py-3 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition text-center">Learn More</a>
                     </div>
                 </div>
@@ -459,7 +596,7 @@
                                 </div>
                                 <div>
                                     <h3 class="text-lg font-semibold">Email</h3>
-                                    <p class="text-gray-600">support@martchoice.com</p>
+                                    <p class="text-gray-600">support@smartchoice.com</p>
                                 </div>
                             </div>
                         </div>
@@ -491,8 +628,7 @@
                     
                     <div class="bg-white rounded-lg shadow-md p-6">
                         <h3 class="text-xl font-semibold mb-4">Send us a message</h3>
-                        <form action="{{ route('contact.submit') }}" method="POST">
-                            @csrf
+                        <form action="#" method="POST">
                             <div class="mb-4">
                                 <label class="block text-gray-700 mb-2" for="name">Name</label>
                                 <input class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-600" id="name" type="text" name="name" placeholder="Your Name" required>
@@ -594,6 +730,18 @@
                     break;
                 case '2':
                     dailyRate = 0.021; // 2.1%
+                    break;
+                case '3':
+                    dailyRate = 0.024; // 2.4%
+                    break;
+                case '4':
+                    dailyRate = 0.027; // 2.7%
+                    break;
+                case '5':
+                    dailyRate = 0.03; // 3%
+                    break;
+                case '6':
+                    dailyRate = 0.033; // 3.3%
                     break;
                 default:
                     dailyRate = 0.01;

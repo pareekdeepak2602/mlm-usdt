@@ -36,14 +36,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/change-password', [UserController::class, 'changePassword'])->name('password.change');
     Route::post('/change-password', [UserController::class, 'updatePassword'])->name('password.update.x');
     
+    Route::get('/kyc', [UserController::class, 'kyc'])->name('user.kyc');
+    Route::post('/kyc', [UserController::class, 'submitKyc'])->name('kyc.submit');
+    
     // KYC
     Route::get('/kyc', [UserController::class, 'kyc'])->name('kyc');
     Route::post('/kyc', [UserController::class, 'submitKyc'])->name('kyc.submit');
     
     // Notifications
     Route::get('/notifications', [UserController::class, 'notifications'])->name('notifications');
-    Route::get('/notifications/{id}/read', [UserController::class, 'markNotificationAsRead'])->name('notifications.read');
-    Route::get('/notifications/read-all', [UserController::class, 'markAllNotificationsAsRead'])->name('notifications.read-all');
+    Route::get('/notifications/{id}/mark-read', [UserController::class, 'markNotificationAsRead'])->name('notifications.mark-read');
+    Route::post('/notifications/mark-all-read', [UserController::class, 'markAllNotificationsAsRead'])->name('notifications.mark-all-read');
     
     // Investments
     Route::get('/investments', [InvestmentController::class, 'index'])->name('investments.index');
@@ -65,7 +68,19 @@ Route::middleware(['auth'])->group(function () {
     
     // Withdrawals
     Route::get('/withdrawals', [WithdrawalController::class, 'index'])->name('withdrawals.index');
-    Route::get('/withdrawals/create', [WithdrawalController::class, 'create'])->name('withdrawals.create');
+    Route::get('/withdrawals/create', [WithdrawalController::class, 'create'])->name('withdraw.create');
     Route::post('/withdrawals', [WithdrawalController::class, 'store'])->name('withdrawals.store');
+    Route::get('/withdrawals/{id}', [WithdrawalController::class, 'show'])->name('withdrawals.show');
+
+        Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
+    Route::get('/wallet/deposit', [WalletController::class, 'deposit'])->name('wallet.deposit');
+    Route::post('/wallet/deposit', [WalletController::class, 'processDeposit'])->name('wallet.process-deposit');
+    Route::get('/wallet/transactions', [WalletController::class, 'transactions'])->name('wallet.transactions');
+    Route::get('/wallet/transaction/{id}', [WalletController::class, 'transactionDetails'])->name('wallet.transaction-details');
+    
+    // Withdrawal routes (you'll need to create this controller too)
+    Route::get('/withdraw', [WithdrawalController::class, 'create'])->name('withdraw.create');
+    Route::get('/withdrawals/create', [WithdrawalController::class, 'create'])->name('withdraw.create');
+    Route::post('/withdrawals', [WithdrawalController::class, 'store'])->name('withdraw.store');
     Route::get('/withdrawals/{id}', [WithdrawalController::class, 'show'])->name('withdrawals.show');
 });

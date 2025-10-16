@@ -26,19 +26,19 @@ class WithdrawalController extends Controller
         ));
     }
     
-    public function create()
-    {
-        $user = Auth::user();
-        $balance = \App\Services\WalletService::getBalance($user->id);
-        $minWithdrawal = SystemSetting::getValue('minimum_withdrawal', 30);
-        $withdrawalFee = SystemSetting::getValue('withdrawal_fee_percentage', 10);
-        
-        return view('withdrawals.create', compact(
-            'balance', 
-            'minWithdrawal', 
-            'withdrawalFee'
-        ));
-    }
+   public function create()
+{
+    $user = Auth::user();
+    $balance = \App\Services\WalletService::getBalance($user->id);
+    $minWithdrawal = SystemSetting::getValue('minimum_withdrawal', 30);
+    $withdrawalFee = SystemSetting::getValue('withdrawal_fee_percentage', 10);
+    
+    return view('withdrawals.create', compact(
+        'balance', 
+        'minWithdrawal', 
+        'withdrawalFee'
+    ));
+}
     
     public function store(Request $request)
     {

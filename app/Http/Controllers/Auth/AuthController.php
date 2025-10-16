@@ -5,14 +5,17 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Models\Transaction;
 use App\Models\Notification;
+use App\Services\WalletService;
+use App\Services\ReferralService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use App\Services\ReferralService;
-
+use App\Mail\WelcomeEmail;
 
 class AuthController extends Controller
 {
@@ -55,23 +58,34 @@ class AuthController extends Controller
         // Create wallet for the user
         Wallet::create(['user_id' => $user->id]);
         
+        // Add 10 USDT welcome bonus to referral balance
+        WalletService::addBonus($user->id, 10, 'Welcome Bonus');
+        
         // Process referral if applicable
         if ($referralCode) {
             ReferralService::processReferral($user);
         }
         
         // Send welcome notification
-        // Notification::createNotification(
-        //     $user->id,
-        //     'Welcome to MLM Platform',
-        //     'Your account has been created successfully. Please deposit funds to activate your account.',
-        //     'info'
-        // );
+        Notification::createNotification(
+            $user->id,
+            'Welcome to Smart Choice',
+            'Your account has been created successfully with a 10 USDT welcome bonus. Please deposit funds to activate your account.',
+            'info'
+        );
+        
+        // Send welcome email
+        try {
+            Mail::to($user->email)->send(new WelcomeEmail($user));
+        } catch (\Exception $e) {
+            // Log error but don't stop registration process
+            \Log::error('Failed to send welcome email: ' . $e->getMessage());
+        }
         
         Auth::login($user);
         
         return redirect()->route('dashboard')
-            ->with('success', 'Registration successful! Please deposit funds to activate your account.');
+            ->with('success', 'Registration successful! You have received 10 USDT as a welcome bonus. Please deposit funds to activate your account.');
     }
     
     public function showLoginForm()

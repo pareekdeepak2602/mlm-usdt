@@ -7,7 +7,7 @@
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">Withdrawals</h1>
-        <a href="{{ route('withdrawals.create') }}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+        <a href="{{ route('withdraw.create') }}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
             <i class="fas fa-plus fa-sm text-white-50"></i> New Withdrawal
         </a>
     </div>
@@ -102,7 +102,7 @@
                         <div class="text-center py-4">
                             <i class="fas fa-money-bill-wave fa-3x text-gray-300 mb-3"></i>
                             <p class="text-muted">No withdrawal requests yet</p>
-                            <a href="{{ route('withdrawals.create') }}" class="btn btn-primary">Request Withdrawal</a>
+                            <a href="{{ route('withdraw.create') }}" class="btn btn-primary">Request Withdrawal</a>
                         </div>
                     @endif
                 </div>

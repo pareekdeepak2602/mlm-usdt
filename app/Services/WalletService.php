@@ -69,6 +69,39 @@ class WalletService
         return ['success' => true, 'message' => 'Deposit successful'];
     }
     
+    public static function addBonus($userId, $amount, $description)
+    {
+        $user = User::find($userId);
+        if (!$user) {
+            return ['success' => false, 'message' => 'User not found'];
+        }
+        
+        if ($amount <= 0) {
+            return ['success' => false, 'message' => 'Invalid amount'];
+        }
+        
+        $wallet = $user->wallet;
+        if (!$wallet) {
+            $wallet = Wallet::create(['user_id' => $userId]);
+        }
+        
+        $wallet->referral_balance += $amount;
+        $wallet->total_income += $amount;
+        $wallet->save();
+        
+        // Create transaction record
+        Transaction::create([
+            'user_id' => $userId,
+            'txn_id' => Transaction::generateTxnId(),
+            'txn_type' => 'bonus',
+            'amount' => $amount,
+            'status' => 'completed',
+            'details' => $description,
+        ]);
+        
+        return ['success' => true, 'message' => 'Bonus added successfully'];
+    }
+    
     public static function getBalance($userId)
     {
         $wallet = Wallet::where('user_id', $userId)->first();

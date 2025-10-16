@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Register - MLM + USDT Trading Platform')
+@section('title', 'Register - Smart Choice MLM Platform')
 
 @section('content')
 <div class="register-container">
@@ -8,9 +8,9 @@
         <div class="col-lg-6 register-image d-none d-lg-block">
             <div class="register-image-content">
                 <div class="logo">
-                    <i class="fas fa-coins me-2"></i>MLM Platform
+                    <i class="fas fa-gem me-2"></i>Smart Choice
                 </div>
-                <h2 class="mb-4">Join Our MLM + USDT Trading Platform</h2>
+                <h2 class="mb-4">Join Smart Choice MLM Platform</h2>
                 <p class="mb-4">Start your journey to financial freedom with our innovative platform that combines MLM benefits with USDT trading opportunities.</p>
                 
                 <div class="features">
@@ -94,14 +94,6 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label for="usdt_wallet_address" class="form-label">USDT Wallet Address (BEP20)</label>
-                        <input type="text" class="form-control" id="usdt_wallet_address" name="usdt_wallet_address" value="{{ old('usdt_wallet_address') }}">
-                        @error('usdt_wallet_address')
-                            <div class="text-danger small mt-1">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    
-                    <div class="mb-3">
                         <label for="referral_code" class="form-label">Referral Code (Optional)</label>
                         <input type="text" class="form-control" id="referral_code" name="referral_code" value="{{ $referralCode ?? old('referral_code') }}">
                         @error('referral_code')
@@ -118,7 +110,7 @@
                     </div>
                     
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-register">Register</button>
+                        <button type="submit" class="btn btn-register">Create Account</button>
                     </div>
                 </form>
                 

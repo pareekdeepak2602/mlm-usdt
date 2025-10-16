@@ -1,15 +1,20 @@
 @extends('layouts.app')
 
-@section('page-title', 'Wallet')
+@section('page-title', 'My Wallet')
 
 @section('content')
 <div class="container-fluid">
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Wallet</h1>
-        <a href="{{ route('wallet.deposit') }}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
-            <i class="fas fa-plus fa-sm text-white-50"></i> Deposit Funds
-        </a>
+        <h1 class="h3 mb-0 text-gray-800">My Wallet</h1>
+        <div>
+            <a href="{{ route('wallet.transactions') }}" class="d-none d-sm-inline-block btn btn-sm btn-info shadow-sm me-2">
+                <i class="fas fa-history fa-sm text-white-50"></i> Transaction History
+            </a>
+            <a href="{{ route('wallet.deposit') }}" class="d-none d-sm-inline-block btn btn-sm btn-success shadow-sm">
+                <i class="fas fa-plus-circle fa-sm text-white-50"></i> Make Deposit
+            </a>
+        </div>
     </div>
 
     <!-- Balance Cards -->
@@ -23,7 +28,7 @@
                                 Deposit Balance
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                ${{ number_format($balance['deposit_balance'], 2) }}
+                                ${{ number_format($wallet->deposit_balance ?? 0, 2) }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -43,11 +48,11 @@
                                 Earning Balance
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                ${{ number_format($balance['earning_balance'], 2) }}
+                                ${{ number_format($wallet->earning_balance ?? 0, 2) }}
                             </div>
                         </div>
                         <div class="col-auto">
-                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
                         </div>
                     </div>
                 </div>
@@ -63,7 +68,7 @@
                                 Referral Balance
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                ${{ number_format($balance['referral_balance'], 2) }}
+                                ${{ number_format($wallet->referral_balance ?? 0, 2) }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -80,14 +85,50 @@
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Available Balance
+                                Total Balance
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                ${{ number_format($balance['available_balance'], 2) }}
+                                ${{ number_format(($wallet->deposit_balance ?? 0) + ($wallet->earning_balance ?? 0) + ($wallet->referral_balance ?? 0), 2) }}
                             </div>
                         </div>
                         <div class="col-auto">
-                            <i class="fas fa-coins fa-2x text-gray-300"></i>
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ route('wallet.deposit') }}" class="btn btn-success btn-lg btn-block py-3">
+                                <i class="fas fa-plus-circle fa-2x mb-2"></i><br>
+                                Make Deposit<br>
+                                <small class="text-light">Add funds to your account</small>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ route('withdraw.create') }}" class="btn btn-warning btn-lg btn-block py-3">
+                                <i class="fas fa-money-bill-wave fa-2x mb-2"></i><br>
+                                Request Withdrawal<br>
+                                <small class="text-light">Withdraw your earnings</small>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ route('wallet.transactions') }}" class="btn btn-info btn-lg btn-block py-3">
+                                <i class="fas fa-history fa-2x mb-2"></i><br>
+                                View Transactions<br>
+                                <small class="text-light">Check your transaction history</small>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -97,46 +138,48 @@
 
     <!-- Recent Transactions -->
     <div class="row">
-        <div class="col-lg-12 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">Recent Transactions</h6>
                     <a href="{{ route('wallet.transactions') }}" class="btn btn-sm btn-primary">View All</a>
                 </div>
                 <div class="card-body">
                     @if($transactions->count() > 0)
                         <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead>
+                            <table class="table table-bordered table-hover">
+                                <thead class="thead-light">
                                     <tr>
+                                        <th>Date</th>
                                         <th>Transaction ID</th>
                                         <th>Type</th>
                                         <th>Amount</th>
                                         <th>Status</th>
-                                        <th>Date</th>
-                                        <th>Actions</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($transactions as $transaction)
                                         <tr>
-                                            <td>{{ $transaction->txn_id }}</td>
+                                            <td>{{ $transaction->created_at->format('M d, Y') }}</td>
                                             <td>
-                                                <span class="badge bg-{{ $transaction->txn_type === 'deposit' || $transaction->txn_type === 'income' || $transaction->txn_type === 'referral' ? 'success' : 'danger' }}">
-                                                    {{ ucfirst(str_replace('_', ' ', $transaction->txn_type)) }}
+                                                <code>{{ substr($transaction->txn_id, 0, 8) }}...</code>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{{ $transaction->txn_type === 'deposit' ? 'success' : ($transaction->txn_type === 'withdraw' ? 'warning' : ($transaction->txn_type === 'income' ? 'info' : 'primary')) }}">
+                                                    {{ ucfirst($transaction->txn_type) }}
                                                 </span>
                                             </td>
-                                            <td class="{{ $transaction->amount > 0 ? 'text-success' : 'text-danger' }}">
-                                                ${{ number_format(abs($transaction->amount), 2) }}
+                                            <td class="font-weight-bold text-{{ $transaction->txn_type === 'withdraw' || $transaction->txn_type === 'withdrawal_fee' ? 'danger' : 'success' }}">
+                                                {{ $transaction->txn_type === 'withdraw' || $transaction->txn_type === 'withdrawal_fee' ? '-' : '+' }}${{ number_format($transaction->amount, 2) }}
                                             </td>
                                             <td>
-                                                <span class="badge bg-{{ $transaction->status === 'completed' ? 'success' : ($transaction->status === 'pending' ? 'warning' : 'danger') }}">
+                                                <span class="badge bg-{{ $transaction->status === 'completed' ? 'success' : ($transaction->status === 'pending' ? 'warning' : ($transaction->status === 'failed' ? 'danger' : 'secondary')) }}">
                                                     {{ ucfirst($transaction->status) }}
                                                 </span>
                                             </td>
-                                            <td>{{ $transaction->created_at->format('M d, Y H:i') }}</td>
                                             <td>
-                                                <a href="{{ route('wallet.transaction-details', $transaction->id) }}" class="btn btn-sm btn-info">
+                                                <a href="{{ route('wallet.transaction-details', $transaction->id) }}" class="btn btn-sm btn-outline-primary">
                                                     <i class="fas fa-eye"></i> View
                                                 </a>
                                             </td>
@@ -148,10 +191,67 @@
                     @else
                         <div class="text-center py-4">
                             <i class="fas fa-exchange-alt fa-3x text-gray-300 mb-3"></i>
-                            <p class="text-muted">No transactions yet</p>
-                            <a href="{{ route('wallet.deposit') }}" class="btn btn-primary">Deposit Funds</a>
+                            <h5 class="text-muted">No Transactions Yet</h5>
+                            <p class="text-muted">You haven't made any transactions yet.</p>
+                            <a href="{{ route('wallet.deposit') }}" class="btn btn-primary">
+                                <i class="fas fa-plus-circle"></i> Make Your First Deposit
+                            </a>
                         </div>
                     @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wallet Information -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Wallet Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="font-weight-bold text-primary">Balance Types</h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-wallet text-primary me-2"></i>
+                                    <strong>Deposit Balance:</strong> Funds you have deposited
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-chart-line text-success me-2"></i>
+                                    <strong>Earning Balance:</strong> Income from investments
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-users text-info me-2"></i>
+                                    <strong>Referral Balance:</strong> Earnings from referrals
+                                </li>
+                            </ul>
+                        </div>
+                        <!-- In the Wallet Information section, update the tips -->
+<div class="col-md-6">
+    <h6 class="font-weight-bold text-primary">Quick Tips</h6>
+    <ul class="list-unstyled">
+        <li class="mb-2">
+            <i class="fab fa-bootstrap text-warning me-2"></i>
+            We accept USDT BEP20 only
+        </li>
+        <li class="mb-2">
+            <i class="fas fa-info-circle text-warning me-2"></i>
+            Minimum deposit: $50
+        </li>
+        <li class="mb-2">
+            <i class="fas fa-info-circle text-warning me-2"></i>
+            Minimum withdrawal: $30
+        </li>
+        <li class="mb-2">
+            <i class="fas fa-info-circle text-warning me-2"></i>
+            Withdrawal fee: 10%
+        </li>
+    </ul>
+</div>
+                    </div>
                 </div>
             </div>
         </div>
