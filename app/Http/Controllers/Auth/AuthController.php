@@ -14,8 +14,12 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema; // Add this import
 use Illuminate\Support\Str;
 use App\Mail\WelcomeEmail;
+use App\Mail\ResetPasswordEmail;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -32,7 +36,6 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:150|unique:users',
             'password' => 'required|string|min:6|confirmed',
             'phone' => 'nullable|string|max:20',
-            'usdt_wallet_address' => 'nullable|string|max:255',
             'referral_code' => 'nullable|string|exists:users,referral_code',
             'terms' => 'required',
         ]);
@@ -52,7 +55,6 @@ class AuthController extends Controller
             'email' => $request->input('email'),
             'password' => Hash::make($request->input('password')),
             'phone' => $request->input('phone'),
-            'usdt_wallet_address' => $request->input('usdt_wallet_address'),
         ]);
         
         // Create wallet for the user
@@ -139,17 +141,30 @@ class AuthController extends Controller
         // Generate password reset token
         $token = Str::random(60);
         
-        // Save token to database (you would need a password_resets table)
-        // DB::table('password_resets')->insert([
-        //     'email' => $request->email,
-        //     'token' => $token,
-        //     'created_at' => now(),
-        // ]);
+        // Check if password_resets table exists, if not create it
+        if (!Schema::hasTable('password_resets')) {
+            $this->createPasswordResetsTable();
+        }
+        
+        // Delete any existing tokens for this email
+        DB::table('password_resets')->where('email', $request->email)->delete();
+        
+        // Save token to database
+        DB::table('password_resets')->insert([
+            'email' => $request->email,
+            'token' => Hash::make($token),
+            'created_at' => Carbon::now()
+        ]);
         
         // Send password reset email
-        // Mail::to($request->email)->send(new ResetPasswordEmail($token));
-        
-        return back()->with('status', 'Password reset link sent to your email');
+        try {
+            Mail::to($request->email)->send(new ResetPasswordEmail($token, $request->email));
+            
+            return back()->with('status', 'Password reset link has been sent to your email address.');
+        } catch (\Exception $e) {
+            \Log::error('Failed to send reset password email: ' . $e->getMessage());
+            return back()->withErrors(['email' => 'Failed to send reset link. Please try again.']);
+        }
     }
     
     public function showResetPasswordForm($token)
@@ -165,15 +180,25 @@ class AuthController extends Controller
             'token' => 'required',
         ]);
         
-        // Verify token and update password
-        // $reset = DB::table('password_resets')
-        //     ->where('email', $request->email)
-        //     ->where('token', $request->token)
-        //     ->first();
+        // Verify token
+        $resetRecord = DB::table('password_resets')
+            ->where('email', $request->email)
+            ->first();
         
-        // if (!$reset) {
-        //     return back()->withErrors(['email' => 'Invalid password reset token']);
-        // }
+        if (!$resetRecord) {
+            return back()->withErrors(['email' => 'Invalid password reset token.']);
+        }
+        
+        // Check if token is valid (within 60 minutes)
+        if (Carbon::parse($resetRecord->created_at)->addMinutes(60)->isPast()) {
+            DB::table('password_resets')->where('email', $request->email)->delete();
+            return back()->withErrors(['email' => 'Password reset token has expired.']);
+        }
+        
+        // Verify token matches
+        if (!Hash::check($request->token, $resetRecord->token)) {
+            return back()->withErrors(['email' => 'Invalid password reset token.']);
+        }
         
         // Update user password
         $user = User::where('email', $request->email)->first();
@@ -181,10 +206,28 @@ class AuthController extends Controller
         $user->save();
         
         // Delete token
-        // DB::table('password_resets')
-        //     ->where('email', $request->email)
-        //     ->delete();
+        DB::table('password_resets')->where('email', $request->email)->delete();
         
-        return redirect()->route('login')->with('status', 'Password reset successful');
+        // Send password changed notification
+        Notification::createNotification(
+            $user->id,
+            'Password Changed',
+            'Your password has been successfully changed. If you did not make this change, please contact support immediately.',
+            'warning'
+        );
+        
+        return redirect()->route('login')->with('status', 'Password has been reset successfully. You can now login with your new password.');
+    }
+    
+    /**
+     * Create password_resets table if it doesn't exist
+     */
+    private function createPasswordResetsTable()
+    {
+        Schema::create('password_resets', function ($table) {
+            $table->string('email')->index();
+            $table->string('token');
+            $table->timestamp('created_at')->nullable();
+        });
     }
 }
