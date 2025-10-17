@@ -214,7 +214,7 @@
                         @foreach($notifications->take(3) as $notification)
                             <div class="alert alert-{{ $notification->type }} alert-dismissible fade show" role="alert">
                                 <strong>{{ $notification->title }}</strong> {{ $notification->message }}
-                                <a href="{{ route('notifications.read', $notification->id) }}" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></a>
+                                <a href="{{ route('notifications.mark-read', $notification->id) }}" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></a>
                             </div>
                         @endforeach
                     </div>
