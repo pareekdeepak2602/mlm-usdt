@@ -420,7 +420,7 @@
                         </div>
                         <h3 class="text-xl font-semibold mb-2">Level A</h3>
                         <p class="text-gray-600 mb-2">Direct Referrals</p>
-                        <p class="text-3xl font-bold text-purple-600">10%</p>
+                        <p class="text-3xl font-bold text-purple-600">12%</p>
                         <p class="text-gray-600">Commission</p>
                     </div>
                     
