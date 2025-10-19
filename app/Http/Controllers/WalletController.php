@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Wallet;
 use App\Models\Transaction;
 use App\Services\WalletService;
+use App\Services\LevelService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -34,9 +35,17 @@ class WalletController extends Controller
             'amount' => 'required|numeric|min:50',
             'txn_hash' => 'required|string|max:255',
         ]);
+
+        $user = Auth::user();
+        
+        // Check level-based restrictions before processing
+        $levelCheck = WalletService::checkDepositLimitByLevel($user, $request->input('amount'));
+        if (!$levelCheck['success']) {
+            return redirect()->back()->with('error', $levelCheck['message'])->withInput();
+        }
         
         $result = WalletService::deposit(
-            Auth::id(),
+            $user->id,
             $request->input('amount'),
             $request->input('txn_hash')
         );
@@ -44,7 +53,7 @@ class WalletController extends Controller
         if ($result['success']) {
             return redirect()->route('wallet.index')->with('success', $result['message']);
         } else {
-            return redirect()->back()->with('error', $result['message']);
+            return redirect()->back()->with('error', $result['message'])->withInput();
         }
     }
     

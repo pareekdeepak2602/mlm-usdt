@@ -16,7 +16,92 @@
             </a>
         </div>
     </div>
-
+<div class="row mb-4">
+    <div class="col-lg-12">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Your Level Status</h6>
+                <span class="badge bg-primary">Level {{ Auth::user()->current_level }}</span>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3 mb-3">
+                        <div class="border rounded p-3">
+                            <h5 class="text-primary">{{ Auth::user()->direct_referrals_count }}</h5>
+                            <small class="text-muted">Direct Referrals (A)</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="border rounded p-3">
+                            <h5 class="text-success">{{ Auth::user()->indirect_referrals_count }}</h5>
+                            <small class="text-muted">Indirect Referrals (B+C)</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="border rounded p-3">
+                            <h5 class="text-info">${{ number_format(Auth::user()->total_asset_hold, 2) }}</h5>
+                            <small class="text-muted">Total Asset Hold</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="border rounded p-3">
+                            <h5 class="text-warning">
+                                @php
+                                    $nextLevel = Auth::user()->current_level + 1;
+                                    $nextPlan = App\Models\InvestmentPlan::where('level', $nextLevel)->first();
+                                @endphp
+                                @if($nextPlan)
+                                    Level {{ $nextLevel }}
+                                @else
+                                    Max Level
+                                @endif
+                            </h5>
+                            <small class="text-muted">Next Level</small>
+                        </div>
+                    </div>
+                </div>
+                @if($nextPlan)
+                <div class="mt-3 p-3 bg-light rounded">
+                    <h6 class="font-weight-bold mb-2">Requirements for Level {{ $nextLevel }}:</h6>
+                    <div class="row">
+                        @if($nextPlan->direct_referrals_required)
+                        <div class="col-md-4">
+                            <small class="text-muted">Direct Referrals:</small>
+                            <div class="d-flex justify-content-between">
+                                <span>{{ Auth::user()->direct_referrals_count }}/{{ $nextPlan->direct_referrals_required }}</span>
+                                <span class="badge bg-{{ Auth::user()->direct_referrals_count >= $nextPlan->direct_referrals_required ? 'success' : 'warning' }}">
+                                    {{ Auth::user()->direct_referrals_count >= $nextPlan->direct_referrals_required ? 'Completed' : 'Pending' }}
+                                </span>
+                            </div>
+                        </div>
+                        @endif
+                        @if($nextPlan->indirect_referrals_required)
+                        <div class="col-md-4">
+                            <small class="text-muted">Indirect Referrals:</small>
+                            <div class="d-flex justify-content-between">
+                                <span>{{ Auth::user()->indirect_referrals_count }}/{{ $nextPlan->indirect_referrals_required }}</span>
+                                <span class="badge bg-{{ Auth::user()->indirect_referrals_count >= $nextPlan->indirect_referrals_required ? 'success' : 'warning' }}">
+                                    {{ Auth::user()->indirect_referrals_count >= $nextPlan->indirect_referrals_required ? 'Completed' : 'Pending' }}
+                                </span>
+                            </div>
+                        </div>
+                        @endif
+                        <div class="col-md-4">
+                            <small class="text-muted">Asset Hold:</small>
+                            <div class="d-flex justify-content-between">
+                                <span>${{ number_format(Auth::user()->total_asset_hold, 2) }}/${{ number_format($nextPlan->asset_hold, 2) }}</span>
+                                <span class="badge bg-{{ Auth::user()->total_asset_hold >= $nextPlan->asset_hold ? 'success' : 'warning' }}">
+                                    {{ Auth::user()->total_asset_hold >= $nextPlan->asset_hold ? 'Completed' : 'Pending' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
     <!-- Balance Cards -->
     <div class="row mb-4">
         <div class="col-xl-3 col-md-6 mb-4">

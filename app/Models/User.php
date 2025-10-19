@@ -117,4 +117,40 @@ class User extends Authenticatable
         
         return $code;
     }
+    public function canInvestInPlan($plan)
+{
+    // Check if user meets referral requirements
+    if ($plan->direct_referrals_required) {
+        $directReferrals = $this->referrals()->where('level', 1)->count();
+        if ($directReferrals < $plan->direct_referrals_required) {
+            return false;
+        }
+    }
+    
+    if ($plan->indirect_referrals_required) {
+        $indirectReferrals = $this->referrals()->where('level', '>', 1)->count();
+        if ($indirectReferrals < $plan->indirect_referrals_required) {
+            return false;
+        }
+    }
+    
+    // Check if user has sufficient balance for asset hold
+    if ($this->wallet_balance < $plan->asset_hold) {
+        return false;
+    }
+    
+    return true;
+}
+// In User model, add these methods:
+
+
+
+
+
+
+
+public function getAvailableBalanceAttribute()
+{
+    return $this->wallet ? ($this->wallet->deposit_balance + $this->wallet->earning_balance + $this->wallet->referral_balance) : 0;
+}
 }

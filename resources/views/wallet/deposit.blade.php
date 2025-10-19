@@ -41,6 +41,31 @@
                         </div>
                     @endif
 
+                    <!-- User Level Info -->
+                    @php
+                        $user = Auth::user();
+                        $depositLimits = App\Services\WalletService::getDepositLimitsByLevel($user->current_level);
+                    @endphp
+                    
+                    <div class="alert alert-info mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-info-circle fa-2x me-3"></i>
+                            <div>
+                                <h6 class="alert-heading mb-1">Your Current Level: <span class="badge bg-primary">Level {{ $user->current_level }}</span></h6>
+                                <p class="mb-1">Deposit Limits: 
+                                    <strong>${{ number_format($depositLimits['min_deposit'], 2) }} 
+                                    @if($depositLimits['max_deposit'])
+                                        - ${{ number_format($depositLimits['max_deposit'], 2) }}
+                                    @else
+                                        and above
+                                    @endif
+                                    </strong>
+                                </p>
+                                <small>Asset Hold Required: ${{ number_format($depositLimits['asset_hold_required'], 2) }}</small>
+                            </div>
+                        </div>
+                    </div>
+
                     <form method="POST" action="{{ route('wallet.process-deposit') }}">
                         @csrf
                         
@@ -56,14 +81,22 @@
                                                name="amount" 
                                                value="{{ old('amount') }}" 
                                                step="0.01" 
-                                               min="50" 
+                                               min="{{ $depositLimits['min_deposit'] }}" 
+                                               @if($depositLimits['max_deposit'])
+                                                   max="{{ $depositLimits['max_deposit'] }}"
+                                               @endif
                                                placeholder="Enter amount"
                                                required>
                                     </div>
                                     @error('amount')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
-                                    <small class="form-text text-muted">Minimum deposit: $50.00</small>
+                                    <small class="form-text text-muted">
+                                        Minimum: ${{ number_format($depositLimits['min_deposit'], 2) }}
+                                        @if($depositLimits['max_deposit'])
+                                            | Maximum: ${{ number_format($depositLimits['max_deposit'], 2) }}
+                                        @endif
+                                    </small>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -102,7 +135,7 @@
                                 <li>Send <strong>USDT BEP20</strong> only to our wallet address</li>
                                 <li>Ensure you are on <strong>Binance Smart Chain (BSC)</strong> network</li>
                                 <li>Copy and paste the BSC transaction hash correctly</li>
-                                <li>Minimum deposit amount is $50 USDT</li>
+                                <li>Minimum deposit amount is ${{ number_format($depositLimits['min_deposit'], 2) }} USDT</li>
                                 <li>Keep sufficient BNB for transaction fees</li>
                             </ul>
                         </div>
@@ -113,6 +146,82 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- Level Upgrade Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-primary text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-level-up-alt me-2"></i>Upgrade Your Level for Higher Deposit Limits
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @php
+                        $nextLevel = $user->current_level + 1;
+                        $nextPlan = App\Models\InvestmentPlan::where('level', $nextLevel)
+                                                            ->where('status', 'active')
+                                                            ->first();
+                    @endphp
+                    
+                    @if($nextPlan)
+                        <h6 class="font-weight-bold text-primary mb-3">Requirements for Level {{ $nextLevel }}:</h6>
+                        <div class="row text-center">
+                            @if($nextPlan->direct_referrals_required)
+                                <div class="col-md-4 mb-3">
+                                    <div class="border rounded p-3">
+                                        <h5 class="text-primary">{{ $user->direct_referrals_count }} / {{ $nextPlan->direct_referrals_required }}</h5>
+                                        <small class="text-muted">Direct Referrals (A)</small>
+                                        <div class="progress mt-2" style="height: 5px;">
+                                            <div class="progress-bar bg-primary" style="width: {{ min(100, ($user->direct_referrals_count / $nextPlan->direct_referrals_required) * 100) }}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                            
+                            @if($nextPlan->indirect_referrals_required)
+                                <div class="col-md-4 mb-3">
+                                    <div class="border rounded p-3">
+                                        <h5 class="text-success">{{ $user->indirect_referrals_count }} / {{ $nextPlan->indirect_referrals_required }}</h5>
+                                        <small class="text-muted">Indirect Referrals (B+C)</small>
+                                        <div class="progress mt-2" style="height: 5px;">
+                                            <div class="progress-bar bg-success" style="width: {{ min(100, ($user->indirect_referrals_count / $nextPlan->indirect_referrals_required) * 100) }}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                            
+                            <div class="col-md-4 mb-3">
+                                <div class="border rounded p-3">
+                                    <h5 class="text-info">${{ number_format($user->total_asset_hold, 2) }} / ${{ number_format($nextPlan->asset_hold, 2) }}</h5>
+                                    <small class="text-muted">Asset Hold Required</small>
+                                    <div class="progress mt-2" style="height: 5px;">
+                                        <div class="progress-bar bg-info" style="width: {{ min(100, ($user->total_asset_hold / $nextPlan->asset_hold) * 100) }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3 p-3 bg-light rounded">
+                            <h6 class="font-weight-bold text-warning">Level {{ $nextLevel }} Benefits:</h6>
+                            <ul class="mb-0">
+                                <li>Daily Return: <strong>{{ $nextPlan->daily_percentage }}%</strong></li>
+                                <li>Deposit Range: <strong>${{ number_format($nextPlan->min_investment, 2) }} 
+                                    @if($nextPlan->max_investment)
+                                        - ${{ number_format($nextPlan->max_investment, 2) }}
+                                    @else
+                                        and above
+                                    @endif
+                                </strong></li>
+                                <li>Higher referral commissions</li>
+                            </ul>
+                        </div>
+                    @else
+                        <div class="text-center py-3">
+                            <i class="fas fa-trophy fa-2x text-warning mb-2"></i>
+                            <h6 class="text-muted">You've reached the maximum level!</h6>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -257,6 +366,9 @@
     padding: 5px 0;
     border-bottom: 1px solid #f8f9fa;
 }
+.progress {
+    background-color: #e9ecef;
+}
 </style>
 @endpush
 
@@ -279,31 +391,25 @@ function copyWalletAddress() {
     });
 }
 
-// Add BSC network to MetaMask
-function addBSCNetwork() {
-    if (typeof window.ethereum !== 'undefined') {
-        window.ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [{
-                chainId: '0x38',
-                chainName: 'Binance Smart Chain',
-                nativeCurrency: {
-                    name: 'BNB',
-                    symbol: 'BNB',
-                    decimals: 18
-                },
-                rpcUrls: ['https://bsc-dataseed.binance.org/'],
-                blockExplorerUrls: ['https://bscscan.com/']
-            }]
-        }).then(() => {
-            alert('BSC Network added successfully!');
-        }).catch((error) => {
-            console.error('Error adding BSC network:', error);
-            alert('Error adding BSC network. Please add it manually.');
-        });
-    } else {
-        alert('Please install MetaMask to use this feature.');
-    }
-}
+// Update deposit limits based on level
+document.addEventListener('DOMContentLoaded', function() {
+    const amountInput = document.getElementById('amount');
+    const userLevel = {{ Auth::user()->current_level }};
+    
+    // You can add dynamic validation here if needed
+    amountInput.addEventListener('input', function() {
+        const amount = parseFloat(this.value);
+        const minDeposit = parseFloat(this.min);
+        const maxDeposit = this.max ? parseFloat(this.max) : null;
+        
+        if (amount < minDeposit) {
+            this.setCustomValidity(`Minimum deposit for Level ${userLevel} is $${minDeposit}`);
+        } else if (maxDeposit && amount > maxDeposit) {
+            this.setCustomValidity(`Maximum deposit for Level ${userLevel} is $${maxDeposit}`);
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+});
 </script>
 @endpush
