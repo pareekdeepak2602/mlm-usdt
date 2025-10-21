@@ -112,6 +112,7 @@
                     <a href="#investment-plans" class="nav-link text-gray-700 hover:text-purple-600 transition">Investment Plans</a>
                     <a href="#calculator" class="nav-link text-gray-700 hover:text-purple-600 transition">Calculator</a>
                     <a href="#referral-program" class="nav-link text-gray-700 hover:text-purple-600 transition">Referral Program</a>
+                    <a href="#contact" class="nav-link text-gray-700 hover:text-purple-600 transition">Contact</a>
                 </div>
                 
                 <div class="flex space-x-4">
@@ -135,6 +136,7 @@
                 <a href="#investment-plans" class="block py-2 text-gray-700 hover:text-purple-600">Investment Plans</a>
                 <a href="#calculator" class="block py-2 text-gray-700 hover:text-purple-600">Calculator</a>
                 <a href="#referral-program" class="block py-2 text-gray-700 hover:text-purple-600">Referral Program</a>
+                <a href="#contact" class="block py-2 text-gray-700 hover:text-purple-600">Contact</a>
             </div>
         </div>
     </nav>
@@ -147,7 +149,7 @@
                     <h1 class="text-4xl md:text-5xl font-bold mb-6">Smart Investment with Smart Choice</h1>
                     <p class="text-xl mb-8">Invest in USDT BEP20 and earn daily returns with our secure and transparent investment platform. Join thousands of satisfied investors today.</p>
                     <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                        <a href="#" class="px-8 py-3 bg-white text-purple-600 rounded-lg font-semibold hover:bg-gray-100 transition text-center">Get Started</a>
+                        <a href="{{ route('register') }}" class="px-8 py-3 bg-white text-purple-600 rounded-lg font-semibold hover:bg-gray-100 transition text-center">Get Started</a>
                         <a href="#investment-plans" class="px-8 py-3 border border-white rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition text-center">View Plans</a>
                     </div>
                 </div>
@@ -168,94 +170,77 @@
                 <p class="text-xl text-gray-600 max-w-3xl mx-auto">Choose from our tiered investment plans designed to meet different financial goals and referral requirements.</p>
             </div>
             
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden card-hover relative">
-                    <div class="level-badge">0</div>
-                    <div class="bg-purple-600 text-white p-6 text-center">
-                        <h3 class="text-2xl font-bold mb-2">Starter Plan</h3>
-                        <div class="text-4xl font-bold">1% <span class="text-lg font-normal">Daily</span></div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                @foreach($plans as $plan)
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden card-hover relative 
+                    {{ $plan->is_popular ? 'transform scale-105 border-2 border-yellow-400' : '' }}">
+                    
+                    @if($plan->is_popular)
+                    <div class="absolute top-0 right-0 bg-yellow-400 text-gray-800 px-3 py-1 rounded-bl-lg text-sm font-semibold z-10">
+                        Popular
                     </div>
+                    @endif
+                    
+                    <div class="level-badge">{{ $plan->level }}</div>
+                    
+                    <div class="bg-purple-600 text-white p-6 text-center">
+                        <h3 class="text-2xl font-bold mb-2">{{ $plan->name }}</h3>
+                        <div class="text-4xl font-bold">{{ $plan->daily_percentage }}% <span class="text-lg font-normal">Daily</span></div>
+                    </div>
+                    
                     <div class="p-6">
                         <ul class="space-y-3 mb-6">
                             <li class="flex items-center">
                                 <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                                <span>Minimum Deposit: $50</span>
+                                <span>Min Investment: ${{ number_format($plan->min_investment, 0) }}</span>
                             </li>
+                            @if($plan->max_investment)
                             <li class="flex items-center">
                                 <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                                <span>ID Activation Required</span>
+                                <span>Max Investment: ${{ number_format($plan->max_investment, 0) }}</span>
                             </li>
+                            @endif
+                            <li class="flex items-center">
+                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                <span>Asset Hold: ${{ number_format($plan->asset_hold, 0) }}</span>
+                            </li>
+                            @if($plan->direct_referrals_required || $plan->indirect_referrals_required)
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mr-2 mt-1"></i>
+                                <span>
+                                    Referrals Required:
+                                    @if($plan->direct_referrals_required)
+                                        {{ $plan->direct_referrals_required }}A 
+                                    @endif
+                                    @if($plan->indirect_referrals_required)
+                                        {{ $plan->direct_referrals_required ? '+' : '' }}{{ $plan->indirect_referrals_required }}B+C
+                                    @endif
+                                </span>
+                            </li>
+                            @else
                             <li class="flex items-center">
                                 <i class="fas fa-check-circle text-green-500 mr-2"></i>
                                 <span>No Referral Requirements</span>
                             </li>
+                            @endif
                             <li class="flex items-center">
                                 <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                                <span>Total Return: 30% (30 Days)</span>
+                                <span>Total Return: {{ number_format($plan->daily_percentage * $plan->duration_days, 1) }}%</span>
                             </li>
                         </ul>
-                        <a href="#" class="block w-full py-3 bg-purple-600 text-white rounded-lg text-center hover:bg-purple-700 transition">Choose Plan</a>
+                        
+                        @if($plan->level <= 1)
+                        <a href="{{ route('register') }}" class="block w-full py-3 bg-purple-600 text-white rounded-lg text-center hover:bg-purple-700 transition">
+                            Get Started
+                        </a>
+                        @else
+                        <div class="text-center">
+                            <span class="text-sm text-gray-500">Reach Level {{ $plan->level }} to unlock</span>
+                        </div>
+                        @endif
                     </div>
                 </div>
-                
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden card-hover relative transform scale-105">
-                    <div class="level-badge">1</div>
-                    <div class="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6 text-center relative">
-                        <div class="absolute top-0 right-0 bg-yellow-400 text-gray-800 px-3 py-1 rounded-bl-lg text-sm font-semibold">Popular</div>
-                        <h3 class="text-2xl font-bold mb-2">Growth Plan</h3>
-                        <div class="text-4xl font-bold">1.8% <span class="text-lg font-normal">Daily</span></div>
-                    </div>
-                    <div class="p-6">
-                        <ul class="space-y-3 mb-6">
-                            <li class="flex items-center">
-                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                                <span>Minimum Deposit: $100</span>
-                            </li>
-                            <li class="flex items-center">
-                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                                <span>ID Activation Required</span>
-                            </li>
-                            <li class="flex items-center">
-                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                                <span>No Referral Requirements</span>
-                            </li>
-                            <li class="flex items-center">
-                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                                <span>Total Return: 54% (30 Days)</span>
-                            </li>
-                        </ul>
-                        <a href="#" class="block w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg text-center hover:opacity-90 transition">Choose Plan</a>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden card-hover relative">
-                    <div class="level-badge">2</div>
-                    <div class="bg-purple-600 text-white p-6 text-center">
-                        <h3 class="text-2xl font-bold mb-2">Premium Plan</h3>
-                        <div class="text-4xl font-bold">2.1% <span class="text-lg font-normal">Daily</span></div>
-                    </div>
-                    <div class="p-6">
-                        <ul class="space-y-3 mb-6">
-                            <li class="flex items-center">
-                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                                <span>Minimum Deposit: $200</span>
-                            </li>
-                            <li class="flex items-center">
-                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                                <span>ID Activation Required</span>
-                            </li>
-                            <li class="flex items-center">
-                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                                <span>3 Direct + 2 Indirect Referrals</span>
-                            </li>
-                            <li class="flex items-center">
-                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                                <span>Total Return: 63% (30 Days)</span>
-                            </li>
-                        </ul>
-                        <a href="#" class="block w-full py-3 bg-purple-600 text-white rounded-lg text-center hover:bg-purple-700 transition">Choose Plan</a>
-                    </div>
-                </div>
+                @endforeach
             </div>
             
             <!-- Level Requirements Table -->
@@ -273,55 +258,15 @@
                             </tr>
                         </thead>
                         <tbody>
+                            @foreach($plans as $plan)
                             <tr class="border-b hover:bg-gray-50">
-                                <td class="py-3 px-4">0</td>
-                                <td class="py-3 px-4">1.00%</td>
-                                <td class="py-3 px-4">-</td>
-                                <td class="py-3 px-4">-</td>
-                                <td class="py-3 px-4">50</td>
+                                <td class="py-3 px-4">{{ $plan->level }}</td>
+                                <td class="py-3 px-4">{{ $plan->daily_percentage }}%</td>
+                                <td class="py-3 px-4">{{ $plan->direct_referrals_required ?: '-' }}</td>
+                                <td class="py-3 px-4">{{ $plan->indirect_referrals_required ?: '-' }}</td>
+                                <td class="py-3 px-4">${{ number_format($plan->asset_hold, 0) }}</td>
                             </tr>
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="py-3 px-4">1</td>
-                                <td class="py-3 px-4">1.80%</td>
-                                <td class="py-3 px-4">-</td>
-                                <td class="py-3 px-4">-</td>
-                                <td class="py-3 px-4">100</td>
-                            </tr>
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="py-3 px-4">2</td>
-                                <td class="py-3 px-4">2.10%</td>
-                                <td class="py-3 px-4">3</td>
-                                <td class="py-3 px-4">2</td>
-                                <td class="py-3 px-4">300</td>
-                            </tr>
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="py-3 px-4">3</td>
-                                <td class="py-3 px-4">2.40%</td>
-                                <td class="py-3 px-4">5</td>
-                                <td class="py-3 px-4">3</td>
-                                <td class="py-3 px-4">700</td>
-                            </tr>
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="py-3 px-4">4</td>
-                                <td class="py-3 px-4">2.70%</td>
-                                <td class="py-3 px-4">7</td>
-                                <td class="py-3 px-4">5</td>
-                                <td class="py-3 px-4">1500</td>
-                            </tr>
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="py-3 px-4">5</td>
-                                <td class="py-3 px-4">3.00%</td>
-                                <td class="py-3 px-4">10</td>
-                                <td class="py-3 px-4">7</td>
-                                <td class="py-3 px-4">3500</td>
-                            </tr>
-                            <tr class="hover:bg-gray-50">
-                                <td class="py-3 px-4">6</td>
-                                <td class="py-3 px-4">3.30%</td>
-                                <td class="py-3 px-4">15</td>
-                                <td class="py-3 px-4">10</td>
-                                <td class="py-3 px-4">7000</td>
-                            </tr>
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
@@ -345,13 +290,11 @@
                         <div class="mb-6">
                             <label class="block text-gray-700 mb-2" for="investment-level">Investment Level</label>
                             <select id="investment-level" class="calculator-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none">
-                                <option value="0">Level 0 - Starter Plan (1% Daily)</option>
-                                <option value="1">Level 1 - Growth Plan (1.8% Daily)</option>
-                                <option value="2">Level 2 - Premium Plan (2.1% Daily)</option>
-                                <option value="3">Level 3 - Advanced Plan (2.4% Daily)</option>
-                                <option value="4">Level 4 - Professional Plan (2.7% Daily)</option>
-                                <option value="5">Level 5 - Expert Plan (3% Daily)</option>
-                                <option value="6">Level 6 - Elite Plan (3.3% Daily)</option>
+                                @foreach($plans as $plan)
+                                <option value="{{ $plan->level }}" data-daily-rate="{{ $plan->daily_percentage / 100 }}">
+                                    Level {{ $plan->level }} - {{ $plan->name }} ({{ $plan->daily_percentage }}% Daily)
+                                </option>
+                                @endforeach
                             </select>
                         </div>
                         
@@ -420,7 +363,7 @@
                         </div>
                         <h3 class="text-xl font-semibold mb-2">Level A</h3>
                         <p class="text-gray-600 mb-2">Direct Referrals</p>
-                        <p class="text-3xl font-bold text-purple-600">12%</p>
+                        <p class="text-3xl font-bold text-purple-600">10%</p>
                         <p class="text-gray-600">Commission</p>
                     </div>
                     
@@ -498,7 +441,7 @@
                     <h3 class="text-xl font-semibold mb-3">How It Works</h3>
                     <p class="text-gray-700 mb-4">When someone registers using your referral link and makes a deposit, you earn a commission based on their level in your referral network. Commissions are calculated daily and credited to your account automatically.</p>
                     <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                        <a href="#" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-center">Join Now</a>
+                        <a href="{{ route('register') }}" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-center">Join Now</a>
                         <a href="#contact" class="px-6 py-3 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition text-center">Learn More</a>
                     </div>
                 </div>
@@ -587,6 +530,23 @@
             </div>
             
             <div class="max-w-4xl mx-auto">
+                @if(session('success'))
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    {{ session('success') }}
+                </div>
+                @endif
+
+                @if($errors->any())
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+                    <ul class="list-disc list-inside">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+                @endif
+
                 <div class="grid md:grid-cols-2 gap-8">
                     <div>
                         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -628,20 +588,26 @@
                     
                     <div class="bg-white rounded-lg shadow-md p-6">
                         <h3 class="text-xl font-semibold mb-4">Send us a message</h3>
-                        <form action="#" method="POST">
+                        <form action="{{ route('contact.submit') }}" method="POST">
+                            @csrf
                             <div class="mb-4">
                                 <label class="block text-gray-700 mb-2" for="name">Name</label>
-                                <input class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-600" id="name" type="text" name="name" placeholder="Your Name" required>
+                                <input class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-600" 
+                                       id="name" type="text" name="name" value="{{ old('name') }}" placeholder="Your Name" required>
                             </div>
                             <div class="mb-4">
                                 <label class="block text-gray-700 mb-2" for="email">Email</label>
-                                <input class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-600" id="email" type="email" name="email" placeholder="Your Email" required>
+                                <input class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-600" 
+                                       id="email" type="email" name="email" value="{{ old('email') }}" placeholder="Your Email" required>
                             </div>
                             <div class="mb-4">
                                 <label class="block text-gray-700 mb-2" for="message">Message</label>
-                                <textarea class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-600" id="message" name="message" rows="4" placeholder="Your Message" required></textarea>
+                                <textarea class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-600" 
+                                          id="message" name="message" rows="4" placeholder="Your Message" required>{{ old('message') }}</textarea>
                             </div>
-                            <button type="submit" class="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">Send Message</button>
+                            <button type="submit" class="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                                Send Message
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -716,36 +682,11 @@
         
         // Calculator functionality
         document.getElementById('calculate-btn').addEventListener('click', function() {
-            const level = document.getElementById('investment-level').value;
+            const levelSelect = document.getElementById('investment-level');
+            const selectedOption = levelSelect.options[levelSelect.selectedIndex];
+            const dailyRate = parseFloat(selectedOption.getAttribute('data-daily-rate'));
             const amount = parseFloat(document.getElementById('investment-amount').value);
             const days = parseInt(document.getElementById('investment-period').value);
-            
-            let dailyRate;
-            switch(level) {
-                case '0':
-                    dailyRate = 0.01; // 1%
-                    break;
-                case '1':
-                    dailyRate = 0.018; // 1.8%
-                    break;
-                case '2':
-                    dailyRate = 0.021; // 2.1%
-                    break;
-                case '3':
-                    dailyRate = 0.024; // 2.4%
-                    break;
-                case '4':
-                    dailyRate = 0.027; // 2.7%
-                    break;
-                case '5':
-                    dailyRate = 0.03; // 3%
-                    break;
-                case '6':
-                    dailyRate = 0.033; // 3.3%
-                    break;
-                default:
-                    dailyRate = 0.01;
-            }
             
             const dailyReturn = amount * dailyRate;
             const totalReturn = dailyReturn * days;
