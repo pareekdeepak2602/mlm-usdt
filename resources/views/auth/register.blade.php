@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.login')
 
 @section('title', 'Register - Smart Choice MLM Platform')
 

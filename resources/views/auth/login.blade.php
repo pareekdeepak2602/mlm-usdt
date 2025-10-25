@@ -1,10 +1,18 @@
-@extends('layouts.app')
+@extends('layouts.login')
 
 @section('title', 'Login - Smart Choice MLM Platform')
 
 @section('content')
 <div class="login-container">
+    <!-- Mobile Header -->
+    <div class="mobile-header d-block d-lg-none">
+        <div class="logo">
+            <i class="fas fa-gem me-2"></i>Smart Choice
+        </div>
+    </div>
+
     <div class="row g-0">
+        <!-- Left Side - Image & Features (Hidden on mobile) -->
         <div class="col-lg-6 login-image d-none d-lg-block">
             <div class="login-image-content">
                 <div class="logo">
@@ -44,8 +52,17 @@
                 </div>
             </div>
         </div>
+
+        <!-- Right Side - Login Form -->
         <div class="col-lg-6">
             <div class="login-form">
+                <!-- Desktop Logo -->
+                <div class="desktop-logo d-none d-lg-block text-center mb-4">
+                    <div class="logo">
+                        <i class="fas fa-gem me-2"></i>Smart Choice
+                    </div>
+                </div>
+
                 <div class="text-center mb-4">
                     <h3 class="fw-bold">Sign In</h3>
                     <p class="text-muted">Enter your credentials to access your account</p>
@@ -80,8 +97,8 @@
                 </form>
                 
                 <div class="text-center mt-4">
-                    <p>Don't have an account? <a href="{{ route('register') }}" class="text-decoration-none">Register</a></p>
-                    <p><a href="{{ route('password.request') }}" class="text-decoration-none">Forgot Password?</a></p>
+                    <p class="mb-2">Don't have an account? <a href="{{ route('register') }}" class="text-decoration-none fw-bold">Register</a></p>
+                    <p class="mb-0"><a href="{{ route('password.request') }}" class="text-decoration-none">Forgot Password?</a></p>
                 </div>
             </div>
         </div>
@@ -98,50 +115,127 @@
         align-items: center;
         justify-content: center;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        padding: 20px;
     }
+
     .login-container {
         background: rgba(255, 255, 255, 0.95);
         border-radius: 15px;
         box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
         overflow: hidden;
         width: 100%;
-        max-width: 900px;
+        max-width: 400px; /* Reduced for mobile */
     }
-    .login-form {
-        padding: 40px;
+
+    /* Mobile Styles */
+    @media (max-width: 991.98px) {
+        .login-container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .mobile-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .mobile-header .logo {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .login-form {
+            padding: 30px 25px;
+        }
     }
-    .login-image {
-        background: url('https://picsum.photos/seed/login/600/800.jpg') center center/cover;
-        position: relative;
+
+    /* Desktop Styles */
+    @media (min-width: 992px) {
+        .login-container {
+            max-width: 900px; /* Larger for desktop */
+        }
+
+        .login-form {
+            padding: 50px;
+        }
+
+        .desktop-logo .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .login-image {
+            background: url('https://picsum.photos/seed/login/600/800.jpg') center center/cover;
+            position: relative;
+        }
+
+        .login-image::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(102, 126, 234, 0.7);
+        }
+
+        .login-image-content {
+            position: relative;
+            z-index: 1;
+            color: white;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 50px;
+        }
+
+        .features {
+            margin-top: 30px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .feature-icon {
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
     }
-    .login-image::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(102, 126, 234, 0.7);
+
+    /* Common Styles */
+    .logo {
+        font-size: 24px;
+        font-weight: bold;
     }
-    .login-image-content {
-        position: relative;
-        z-index: 1;
-        color: white;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding: 40px;
-    }
+
     .form-control {
         border-radius: 10px;
         padding: 12px 15px;
         border: 1px solid #e0e0e0;
+        font-size: 16px; /* Better for mobile */
     }
+
     .form-control:focus {
         border-color: #667eea;
         box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
     }
+
     .btn-login {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border: none;
@@ -150,33 +244,66 @@
         font-weight: 600;
         color: white;
         transition: all 0.3s ease;
+        font-size: 16px;
     }
+
     .btn-login:hover {
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
     }
-    .logo {
-        font-size: 28px;
-        font-weight: bold;
-        margin-bottom: 20px;
+
+    .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
     }
-    .features {
-        margin-top: 30px;
+
+    a {
+        color: #667eea;
+        transition: color 0.3s ease;
     }
-    .feature-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: 15px;
+
+    a:hover {
+        color: #764ba2;
     }
-    .feature-icon {
-        width: 40px;
-        height: 40px;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 15px;
+
+    /* Better spacing for mobile */
+    @media (max-width: 576px) {
+        body {
+            padding: 15px;
+            align-items: flex-start;
+            padding-top: 40px;
+        }
+
+        .login-container {
+            border-radius: 12px;
+        }
+
+        .login-form {
+            padding: 25px 20px;
+        }
+
+        .text-center h3 {
+            font-size: 1.5rem;
+        }
+
+        .form-control {
+            padding: 14px 15px; /* Larger touch targets */
+        }
+
+        .btn-login {
+            padding: 14px;
+        }
+    }
+
+    /* Extra small devices */
+    @media (max-width: 375px) {
+        .login-form {
+            padding: 20px 15px;
+        }
+
+        .text-center h3 {
+            font-size: 1.3rem;
+        }
     }
 </style>
 @endpush

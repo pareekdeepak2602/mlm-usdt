@@ -115,7 +115,8 @@
                                 Team Size
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ Auth::user()->team_size }}
+                                 {{ $referrals->count()+1 }}
+                                
                             </div>
                         </div>
                         <div class="col-auto">
