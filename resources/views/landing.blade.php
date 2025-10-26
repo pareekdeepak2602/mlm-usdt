@@ -155,7 +155,7 @@
                 </div>
                 <div class="md:w-1/2 flex justify-center">
     <div class="float-animation">
-        <img src="{{ asset('storage/images/hero.png') }}" 
+        <img src="https://i.postimg.cc/RCQbjy41/Gemini-Generated-Image-wz8fsxwz8fsxwz8f.png" 
              alt="Investment" 
              class="rounded-lg shadow-2xl">
     </div>
