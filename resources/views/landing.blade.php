@@ -154,10 +154,13 @@
                     </div>
                 </div>
                 <div class="md:w-1/2 flex justify-center">
-                    <div class="float-animation">
-                        <img src="https://picsum.photos/seed/investment/500/400.jpg" alt="Investment" class="rounded-lg shadow-2xl">
-                    </div>
-                </div>
+    <div class="float-animation">
+        <img src="{{ asset('storage/images/hero.png') }}" 
+             alt="Investment" 
+             class="rounded-lg shadow-2xl">
+    </div>
+</div>
+
             </div>
         </div>
     </section>
