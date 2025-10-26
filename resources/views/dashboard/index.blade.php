@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.app_new')
 
 @section('page-title', 'Dashboard')
 
@@ -7,7 +7,7 @@
     <!-- Stats Cards -->
     <div class="row mb-4">
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card border-left-primary shadow h-100 py-2" style="background: var(--card-bg); border-color: var(--card-border);">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -27,7 +27,7 @@
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
+            <div class="card border-left-success shadow h-100 py-2" style="background: var(--card-bg); border-color: var(--card-border);">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -47,7 +47,7 @@
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
+            <div class="card border-left-info shadow h-100 py-2" style="background: var(--card-bg); border-color: var(--card-border);">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -67,7 +67,7 @@
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card border-left-warning shadow h-100 py-2" style="background: var(--card-bg); border-color: var(--card-border);">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -91,17 +91,17 @@
     <div class="row">
         <!-- Referral Link -->
         <div class="col-lg-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <div class="card shadow" style="background: var(--card-bg); border-color: var(--card-border);">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between" style="background: var(--bg-secondary); border-color: var(--border-color);">
                     <h6 class="m-0 font-weight-bold text-primary">Your Referral Link</h6>
                 </div>
                 <div class="card-body">
-                    <p class="mb-3">Share this link with your friends and earn referral bonuses:</p>
+                    <p class="mb-3" style="color: var(--text-primary);">Share this link with your friends and earn referral bonuses:</p>
                     <div class="input-group mb-3">
-                        <input type="text" class="form-control" value="{{ Auth::user()->referral_link }}" readonly id="referralLink">
+                        <input type="text" class="form-control" value="{{ Auth::user()->referral_link }}" readonly id="referralLink" style="background: var(--bg-primary); border-color: var(--border-color); color: var(--text-primary);">
                         <button class="btn btn-primary" type="button" id="copyBtn">Copy</button>
                     </div>
-                    <div class="alert alert-info">
+                    <div class="alert alert-info" style="background: rgba(23, 162, 184, 0.1); border-color: rgba(23, 162, 184, 0.2); color: var(--text-primary);">
                         <i class="fas fa-info-circle me-2"></i>
                         You will earn <strong>10%</strong> from direct referrals (Level A), <strong>5%</strong> from second level (Level B), and <strong>3%</strong> from third level (Level C).
                     </div>
@@ -111,8 +111,8 @@
 
         <!-- Recent Transactions -->
         <div class="col-lg-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <div class="card shadow" style="background: var(--card-bg); border-color: var(--card-border);">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between" style="background: var(--bg-secondary); border-color: var(--border-color);">
                     <h6 class="m-0 font-weight-bold text-primary">Recent Transactions</h6>
                     <a href="{{ route('wallet.transactions') }}" class="btn btn-sm btn-primary">View All</a>
                 </div>
@@ -122,9 +122,9 @@
                             <table class="table table-borderless">
                                 <thead>
                                     <tr>
-                                        <th>Type</th>
-                                        <th>Amount</th>
-                                        <th>Date</th>
+                                        <th style="color: var(--text-primary);">Type</th>
+                                        <th style="color: var(--text-primary);">Amount</th>
+                                        <th style="color: var(--text-primary);">Date</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -138,14 +138,14 @@
                                             <td class="{{ $transaction->amount > 0 ? 'text-success' : 'text-danger' }}">
                                                 ${{ number_format(abs($transaction->amount), 2) }}
                                             </td>
-                                            <td>{{ $transaction->created_at->format('M d, Y') }}</td>
+                                            <td style="color: var(--text-primary);">{{ $transaction->created_at->format('M d, Y') }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
                             </table>
                         </div>
                     @else
-                        <p class="text-center text-muted">No transactions yet</p>
+                        <p class="text-center" style="color: var(--text-secondary);">No transactions yet</p>
                     @endif
                 </div>
             </div>
@@ -156,8 +156,8 @@
     <div class="row">
         <!-- Active Investments -->
         <div class="col-lg-12 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <div class="card shadow" style="background: var(--card-bg); border-color: var(--card-border);">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between" style="background: var(--bg-secondary); border-color: var(--border-color);">
                     <h6 class="m-0 font-weight-bold text-primary">Active Investments</h6>
                     <a href="{{ route('investments.index') }}" class="btn btn-sm btn-primary">View All</a>
                 </div>
@@ -167,23 +167,23 @@
                             <table class="table table-borderless">
                                 <thead>
                                     <tr>
-                                        <th>Plan</th>
-                                        <th>Amount</th>
-                                        <th>Daily Income</th>
-                                        <th>Total Earned</th>
-                                        <th>End Date</th>
-                                        <th>Remaining Days</th>
+                                        <th style="color: var(--text-primary);">Plan</th>
+                                        <th style="color: var(--text-primary);">Amount</th>
+                                        <th style="color: var(--text-primary);">Daily Income</th>
+                                        <th style="color: var(--text-primary);">Total Earned</th>
+                                        <th style="color: var(--text-primary);">End Date</th>
+                                        <th style="color: var(--text-primary);">Remaining Days</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($investments->where('status', 'active') as $investment)
                                         <tr>
-                                            <td>{{ $investment->plan->name }}</td>
-                                            <td>${{ number_format($investment->amount, 2) }}</td>
+                                            <td style="color: var(--text-primary);">{{ $investment->plan->name }}</td>
+                                            <td style="color: var(--text-primary);">${{ number_format($investment->amount, 2) }}</td>
                                             <td class="text-success">${{ number_format($investment->daily_income, 2) }}</td>
-                                            <td>${{ number_format($investment->total_earned, 2) }}</td>
-                                            <td>{{ $investment->end_date->format('M d, Y') }}</td>
-                                            <td>{{ $investment->remaining_days }} days</td>
+                                            <td style="color: var(--text-primary);">${{ number_format($investment->total_earned, 2) }}</td>
+                                            <td style="color: var(--text-primary);">{{ $investment->end_date->format('M d, Y') }}</td>
+                                            <td style="color: var(--text-primary);">{{ $investment->remaining_days }} days</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -205,14 +205,14 @@
     @if($notifications->count() > 0)
         <div class="row">
             <div class="col-lg-12 mb-4">
-                <div class="card shadow">
-                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <div class="card shadow" style="background: var(--card-bg); border-color: var(--card-border);">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between" style="background: var(--bg-secondary); border-color: var(--border-color);">
                         <h6 class="m-0 font-weight-bold text-primary">Recent Notifications</h6>
                         <a href="{{ route('notifications') }}" class="btn btn-sm btn-primary">View All</a>
                     </div>
                     <div class="card-body">
                         @foreach($notifications->take(3) as $notification)
-                            <div class="alert alert-{{ $notification->type }} alert-dismissible fade show" role="alert">
+                            <div class="alert alert-{{ $notification->type }} alert-dismissible fade show" role="alert" style="background: rgba(var(--bs-{{ $notification->type }}-rgb), 0.1); border-color: rgba(var(--bs-{{ $notification->type }}-rgb), 0.2); color: var(--text-primary);">
                                 <strong>{{ $notification->title }}</strong> {{ $notification->message }}
                                 <a href="{{ route('notifications.mark-read', $notification->id) }}" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></a>
                             </div>
@@ -240,6 +240,14 @@
         setTimeout(function() {
             button.innerHTML = originalText;
         }, 2000);
+    });
+
+    // Update profile balance when wallet data changes
+    document.addEventListener('DOMContentLoaded', function() {
+        const availableBalance = {{ $wallet->available_balance ?? 0 }};
+        if (typeof updateProfileBalance === 'function') {
+            updateProfileBalance(availableBalance);
+        }
     });
 </script>
 @endpush
