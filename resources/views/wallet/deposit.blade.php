@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.app_new')
 
 @section('page-title', 'Make Deposit')
 
@@ -20,8 +20,8 @@
     <div class="row">
         <!-- Deposit Form -->
         <div class="col-lg-8">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
+            <div class="card shadow mb-4" style="background: var(--card-bg); border-color: var(--card-border);">
+                <div class="card-header py-3" style="background: var(--bg-secondary); border-color: var(--border-color);">
                     <h6 class="m-0 font-weight-bold text-primary">Deposit Funds</h6>
                 </div>
                 <div class="card-body">
@@ -47,12 +47,12 @@
                         $depositLimits = App\Services\WalletService::getDepositLimitsByLevel($user->current_level);
                     @endphp
                     
-                    <div class="alert alert-info mb-4">
+                    <div class="alert alert-info mb-4" style="background: rgba(23, 162, 184, 0.1); border-color: rgba(23, 162, 184, 0.2); color: var(--text-primary);">
                         <div class="d-flex align-items-center">
                             <i class="fas fa-info-circle fa-2x me-3"></i>
                             <div>
-                                <h6 class="alert-heading mb-1">Your Current Level: <span class="badge bg-primary">Level {{ $user->current_level }}</span></h6>
-                                <p class="mb-1">Deposit Limits: 
+                                <h6 class="alert-heading mb-1" style="color: var(--text-primary);">Your Current Level: <span class="badge bg-primary">Level {{ $user->current_level }}</span></h6>
+                                <p class="mb-1" style="color: var(--text-primary);">Deposit Limits: 
                                     <strong>${{ number_format($depositLimits['min_deposit'], 2) }} 
                                     @if($depositLimits['max_deposit'])
                                         - ${{ number_format($depositLimits['max_deposit'], 2) }}
@@ -61,7 +61,7 @@
                                     @endif
                                     </strong>
                                 </p>
-                                <small>Asset Hold Required: ${{ number_format($depositLimits['asset_hold_required'], 2) }}</small>
+                                <small style="color: var(--text-secondary);">Asset Hold Required: ${{ number_format($depositLimits['asset_hold_required'], 2) }}</small>
                             </div>
                         </div>
                     </div>
@@ -72,9 +72,9 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="amount" class="form-label">Deposit Amount (USDT)</label>
+                                    <label for="amount" class="form-label" style="color: var(--text-primary);">Deposit Amount (USDT)</label>
                                     <div class="input-group">
-                                        <span class="input-group-text">$</span>
+                                        <span class="input-group-text" style="background: var(--bg-secondary); border-color: var(--border-color); color: var(--text-primary);">$</span>
                                         <input type="number" 
                                                class="form-control @error('amount') is-invalid @enderror" 
                                                id="amount" 
@@ -86,12 +86,13 @@
                                                    max="{{ $depositLimits['max_deposit'] }}"
                                                @endif
                                                placeholder="Enter amount"
-                                               required>
+                                               required
+                                               style="background: var(--bg-primary); border-color: var(--border-color); color: var(--text-primary);">
                                     </div>
                                     @error('amount')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
-                                    <small class="form-text text-muted">
+                                    <small class="form-text" style="color: var(--text-secondary);">
                                         Minimum: ${{ number_format($depositLimits['min_deposit'], 2) }}
                                         @if($depositLimits['max_deposit'])
                                             | Maximum: ${{ number_format($depositLimits['max_deposit'], 2) }}
@@ -101,11 +102,11 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">Your Current Balance</label>
-                                    <div class="card bg-light">
+                                    <label class="form-label" style="color: var(--text-primary);">Your Current Balance</label>
+                                    <div class="card" style="background: var(--bg-secondary); border-color: var(--border-color);">
                                         <div class="card-body text-center">
                                             <h4 class="text-primary">${{ number_format($balance['total'] ?? 0, 2) }}</h4>
-                                            <small class="text-muted">Total Available Balance</small>
+                                            <small style="color: var(--text-secondary);">Total Available Balance</small>
                                         </div>
                                     </div>
                                 </div>
@@ -113,25 +114,26 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="txn_hash" class="form-label">BSC Transaction Hash (BEP20)</label>
+                            <label for="txn_hash" class="form-label" style="color: var(--text-primary);">BSC Transaction Hash (BEP20)</label>
                             <input type="text" 
                                    class="form-control @error('txn_hash') is-invalid @enderror" 
                                    id="txn_hash" 
                                    name="txn_hash" 
                                    value="{{ old('txn_hash') }}" 
                                    placeholder="Enter your BSC transaction hash"
-                                   required>
+                                   required
+                                   style="background: var(--bg-primary); border-color: var(--border-color); color: var(--text-primary);">
                             @error('txn_hash')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
-                            <small class="form-text text-muted">
+                            <small class="form-text" style="color: var(--text-secondary);">
                                 Copy the transaction hash from your wallet after making the BEP20 transfer
                             </small>
                         </div>
 
-                        <div class="alert alert-warning">
-                            <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Important BEP20 Instructions</h6>
-                            <ul class="mb-0">
+                        <div class="alert alert-warning" style="background: rgba(255, 193, 7, 0.1); border-color: rgba(255, 193, 7, 0.2); color: var(--text-primary);">
+                            <h6 class="alert-heading" style="color: var(--text-primary);"><i class="fas fa-exclamation-triangle me-2"></i>Important BEP20 Instructions</h6>
+                            <ul class="mb-0" style="color: var(--text-primary);">
                                 <li>Send <strong>USDT BEP20</strong> only to our wallet address</li>
                                 <li>Ensure you are on <strong>Binance Smart Chain (BSC)</strong> network</li>
                                 <li>Copy and paste the BSC transaction hash correctly</li>
@@ -150,9 +152,9 @@
             </div>
 
             <!-- Level Upgrade Information -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 bg-primary text-white">
-                    <h6 class="m-0 font-weight-bold">
+            <div class="card shadow mb-4" style="background: var(--card-bg); border-color: var(--card-border);">
+                <div class="card-header py-3" style="background: var(--bg-primary); border-color: var(--border-color);">
+                    <h6 class="m-0 font-weight-bold text-white">
                         <i class="fas fa-level-up-alt me-2"></i>Upgrade Your Level for Higher Deposit Limits
                     </h6>
                 </div>
@@ -169,10 +171,10 @@
                         <div class="row text-center">
                             @if($nextPlan->direct_referrals_required)
                                 <div class="col-md-4 mb-3">
-                                    <div class="border rounded p-3">
+                                    <div class="border rounded p-3" style="border-color: var(--border-color) !important;">
                                         <h5 class="text-primary">{{ $user->direct_referrals_count }} / {{ $nextPlan->direct_referrals_required }}</h5>
-                                        <small class="text-muted">Direct Referrals (A)</small>
-                                        <div class="progress mt-2" style="height: 5px;">
+                                        <small style="color: var(--text-secondary);">Direct Referrals (A)</small>
+                                        <div class="progress mt-2" style="height: 5px; background-color: var(--bg-secondary);">
                                             <div class="progress-bar bg-primary" style="width: {{ min(100, ($user->direct_referrals_count / $nextPlan->direct_referrals_required) * 100) }}%"></div>
                                         </div>
                                     </div>
@@ -181,10 +183,10 @@
                             
                             @if($nextPlan->indirect_referrals_required)
                                 <div class="col-md-4 mb-3">
-                                    <div class="border rounded p-3">
+                                    <div class="border rounded p-3" style="border-color: var(--border-color) !important;">
                                         <h5 class="text-success">{{ $user->indirect_referrals_count }} / {{ $nextPlan->indirect_referrals_required }}</h5>
-                                        <small class="text-muted">Indirect Referrals (B+C)</small>
-                                        <div class="progress mt-2" style="height: 5px;">
+                                        <small style="color: var(--text-secondary);">Indirect Referrals (B+C)</small>
+                                        <div class="progress mt-2" style="height: 5px; background-color: var(--bg-secondary);">
                                             <div class="progress-bar bg-success" style="width: {{ min(100, ($user->indirect_referrals_count / $nextPlan->indirect_referrals_required) * 100) }}%"></div>
                                         </div>
                                     </div>
@@ -192,17 +194,17 @@
                             @endif
                             
                             <div class="col-md-4 mb-3">
-                                <div class="border rounded p-3">
+                                <div class="border rounded p-3" style="border-color: var(--border-color) !important;">
                                     <h5 class="text-info">${{ number_format($user->total_asset_hold, 2) }} / ${{ number_format($nextPlan->asset_hold, 2) }}</h5>
-                                    <small class="text-muted">Asset Hold Required</small>
-                                    <div class="progress mt-2" style="height: 5px;">
+                                    <small style="color: var(--text-secondary);">Asset Hold Required</small>
+                                    <div class="progress mt-2" style="height: 5px; background-color: var(--bg-secondary);">
                                         <div class="progress-bar bg-info" style="width: {{ min(100, ($user->total_asset_hold / $nextPlan->asset_hold) * 100) }}%"></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="mt-3 p-3 bg-light rounded">
+                        <div class="mt-3 p-3 rounded" style="background: var(--bg-secondary); color: var(--text-primary);">
                             <h6 class="font-weight-bold text-warning">Level {{ $nextLevel }} Benefits:</h6>
                             <ul class="mb-0">
                                 <li>Daily Return: <strong>{{ $nextPlan->daily_percentage }}%</strong></li>
@@ -219,7 +221,7 @@
                     @else
                         <div class="text-center py-3">
                             <i class="fas fa-trophy fa-2x text-warning mb-2"></i>
-                            <h6 class="text-muted">You've reached the maximum level!</h6>
+                            <h6 style="color: var(--text-secondary);">You've reached the maximum level!</h6>
                         </div>
                     @endif
                 </div>
@@ -229,16 +231,16 @@
         <!-- Deposit Information -->
         <div class="col-lg-4">
             <!-- BEP20 Wallet Address -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 bg-warning">
-                    <h6 class="m-0 font-weight-bold text-white">
+            <div class="card shadow mb-4" style="background: var(--card-bg); border-color: var(--card-border);">
+                <div class="card-header py-3" style="background: var(--bs-warning); border-color: var(--border-color);">
+                    <h6 class="m-0 font-weight-bold text-dark">
                         <i class="fab fa-bootstrap me-2"></i>Our USDT BEP20 Wallet Address
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="text-center mb-3">
-                        <div class="bg-light p-3 rounded border">
-                            <code class="text-dark small" id="walletAddress">0x742E4D6c4C8B6C4D8E6F7C5A3B2C1D0E9F8A7B6C</code>
+                        <div class="p-3 rounded border" style="background: var(--bg-secondary); border-color: var(--border-color) !important;">
+                            <code class="small" id="walletAddress" style="color: var(--text-primary);">0x742E4D6c4C8B6C4D8E6F7C5A3B2C1D0E9F8A7B6C</code>
                             <button class="btn btn-sm btn-outline-warning ms-2" onclick="copyWalletAddress()">
                                 <i class="fas fa-copy"></i>
                             </button>
@@ -246,10 +248,10 @@
                     </div>
                     <div class="network-info">
                         <div class="d-flex align-items-center justify-content-center mb-2">
-                            <span class="badge bg-warning me-2">BEP20</span>
-                            <small class="text-muted">Binance Smart Chain</small>
+                            <span class="badge bg-warning text-dark me-2">BEP20</span>
+                            <small style="color: var(--text-secondary);">Binance Smart Chain</small>
                         </div>
-                        <p class="small text-muted text-center mb-0">
+                        <p class="small text-center mb-0" style="color: var(--text-secondary);">
                             <i class="fas fa-exclamation-circle me-1"></i>
                             Send <strong>USDT BEP20</strong> only to this address
                         </p>
@@ -258,22 +260,22 @@
             </div>
 
             <!-- Network Information -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
+            <div class="card shadow mb-4" style="background: var(--card-bg); border-color: var(--card-border);">
+                <div class="card-header py-3" style="background: var(--bg-secondary); border-color: var(--border-color);">
                     <h6 class="m-0 font-weight-bold text-primary">BSC Network Details</h6>
                 </div>
                 <div class="card-body">
                     <div class="network-details">
-                        <div class="detail-item mb-2">
+                        <div class="detail-item mb-2" style="color: var(--text-primary);">
                             <strong>Network:</strong> Binance Smart Chain (BSC)
                         </div>
-                        <div class="detail-item mb-2">
+                        <div class="detail-item mb-2" style="color: var(--text-primary);">
                             <strong>Token Type:</strong> USDT BEP20
                         </div>
-                        <div class="detail-item mb-2">
+                        <div class="detail-item mb-2" style="color: var(--text-primary);">
                             <strong>Chain ID:</strong> 56 (Mainnet)
                         </div>
-                        <div class="detail-item">
+                        <div class="detail-item" style="color: var(--text-primary);">
                             <strong>RPC URL:</strong> https://bsc-dataseed.binance.org/
                         </div>
                     </div>
@@ -281,8 +283,8 @@
             </div>
 
             <!-- Deposit Steps -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
+            <div class="card shadow mb-4" style="background: var(--card-bg); border-color: var(--card-border);">
+                <div class="card-header py-3" style="background: var(--bg-secondary); border-color: var(--border-color);">
                     <h6 class="m-0 font-weight-bold text-primary">How to Deposit (BEP20)</h6>
                 </div>
                 <div class="card-body">
@@ -290,29 +292,29 @@
                         <div class="step mb-3">
                             <div class="step-number bg-warning">1</div>
                             <div class="step-content">
-                                <strong>Switch to BSC Network</strong>
-                                <p class="mb-0 small">Ensure your wallet is connected to Binance Smart Chain</p>
+                                <strong style="color: var(--text-primary);">Switch to BSC Network</strong>
+                                <p class="mb-0 small" style="color: var(--text-secondary);">Ensure your wallet is connected to Binance Smart Chain</p>
                             </div>
                         </div>
                         <div class="step mb-3">
                             <div class="step-number bg-warning">2</div>
                             <div class="step-content">
-                                <strong>Send USDT BEP20</strong>
-                                <p class="mb-0 small">Send USDT BEP20 to our wallet address</p>
+                                <strong style="color: var(--text-primary);">Send USDT BEP20</strong>
+                                <p class="mb-0 small" style="color: var(--text-secondary);">Send USDT BEP20 to our wallet address</p>
                             </div>
                         </div>
                         <div class="step mb-3">
                             <div class="step-number bg-warning">3</div>
                             <div class="step-content">
-                                <strong>Copy BSC Transaction Hash</strong>
-                                <p class="mb-0 small">Copy the transaction hash from BSC Scan</p>
+                                <strong style="color: var(--text-primary);">Copy BSC Transaction Hash</strong>
+                                <p class="mb-0 small" style="color: var(--text-secondary);">Copy the transaction hash from BSC Scan</p>
                             </div>
                         </div>
                         <div class="step">
                             <div class="step-number bg-warning">4</div>
                             <div class="step-content">
-                                <strong>Submit Details</strong>
-                                <p class="mb-0 small">Enter amount and transaction hash in the form</p>
+                                <strong style="color: var(--text-primary);">Submit Details</strong>
+                                <p class="mb-0 small" style="color: var(--text-secondary);">Enter amount and transaction hash in the form</p>
                             </div>
                         </div>
                     </div>
@@ -320,14 +322,14 @@
             </div>
 
             <!-- Support Card -->
-            <div class="card shadow">
-                <div class="card-header py-3">
+            <div class="card shadow" style="background: var(--card-bg); border-color: var(--card-border);">
+                <div class="card-header py-3" style="background: var(--bg-secondary); border-color: var(--border-color);">
                     <h6 class="m-0 font-weight-bold text-primary">Need Help?</h6>
                 </div>
                 <div class="card-body text-center">
                     <i class="fab fa-bootstrap fa-2x text-warning mb-2"></i>
                     <i class="fas fa-headset fa-2x text-primary mb-3"></i>
-                    <p class="mb-3">If you face any issues with BEP20 deposit, contact our support team.</p>
+                    <p class="mb-3" style="color: var(--text-primary);">If you face any issues with BEP20 deposit, contact our support team.</p>
                     <a href="#" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-envelope me-2"></i> Contact Support
                     </a>
@@ -364,10 +366,59 @@
 }
 .detail-item {
     padding: 5px 0;
-    border-bottom: 1px solid #f8f9fa;
+    border-bottom: 1px solid var(--border-color);
 }
 .progress {
-    background-color: #e9ecef;
+    background-color: var(--bg-secondary);
+}
+
+/* Card specific styling */
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+/* Ensure form elements are properly styled */
+.form-control {
+    background: var(--bg-primary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.form-control:focus {
+    background: var(--bg-primary) !important;
+    border-color: #667eea !important;
+    color: var(--text-primary) !important;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Alert styling for dark mode */
+.alert {
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border-color: rgba(var(--bs-primary-rgb), 0.2);
+}
+
+.alert-success {
+    background: rgba(var(--bs-success-rgb), 0.1);
+    border-color: rgba(var(--bs-success-rgb), 0.2);
+}
+
+.alert-danger {
+    background: rgba(var(--bs-danger-rgb), 0.1);
+    border-color: rgba(var(--bs-danger-rgb), 0.2);
+}
+
+.alert-warning {
+    background: rgba(var(--bs-warning-rgb), 0.1);
+    border-color: rgba(var(--bs-warning-rgb), 0.2);
+}
+
+.alert-info {
+    background: rgba(var(--bs-info-rgb), 0.1);
+    border-color: rgba(var(--bs-info-rgb), 0.2);
 }
 </style>
 @endpush
