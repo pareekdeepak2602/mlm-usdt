@@ -23,6 +23,10 @@ class User extends Authenticatable
         'kyc_document',
         'activation_amount',
         'activation_date',
+        'current_level',
+        'direct_referrals_count',
+        'indirect_referrals_count',
+        'total_asset_hold',
         'status',
         'last_login',
     ];
@@ -37,6 +41,7 @@ class User extends Authenticatable
         'activation_amount' => 'decimal:2',
         'activation_date' => 'datetime',
         'last_login' => 'datetime',
+        'total_asset_hold' => 'decimal:2',
     ];
 
     public function wallet()
@@ -89,11 +94,25 @@ class User extends Authenticatable
         return route('register', ['ref' => $this->referral_code]);
     }
 
+    /**
+     * Get direct referrals count
+     */
     public function getDirectReferralsCountAttribute()
     {
         return $this->referrals()->where('level_number', 1)->count();
     }
 
+    /**
+     * Get indirect referrals count (levels 2 and 3)
+     */
+    public function getIndirectReferralsCountAttribute()
+    {
+        return $this->referrals()->where('level_number', '>', 1)->count();
+    }
+
+    /**
+     * Get total team size including all levels
+     */
     public function getTeamSizeAttribute()
     {
         $directReferrals = $this->referrals()->pluck('referred_id');
@@ -109,6 +128,9 @@ class User extends Authenticatable
         return $allReferrals->unique()->count();
     }
 
+    /**
+     * Generate unique referral code
+     */
     public static function generateReferralCode()
     {
         do {
@@ -117,40 +139,82 @@ class User extends Authenticatable
         
         return $code;
     }
+
+    /**
+     * Check if user can invest in a specific plan
+     */
     public function canInvestInPlan($plan)
-{
-    // Check if user meets referral requirements
-    if ($plan->direct_referrals_required) {
-        $directReferrals = $this->referrals()->where('level', 1)->count();
-        if ($directReferrals < $plan->direct_referrals_required) {
+    {
+        // Check if user meets referral requirements
+        if ($plan->direct_referrals_required) {
+            $directReferrals = $this->referrals()->where('level_number', 1)->count();
+            if ($directReferrals < $plan->direct_referrals_required) {
+                return false;
+            }
+        }
+        
+        if ($plan->indirect_referrals_required) {
+            $indirectReferrals = $this->referrals()->where('level_number', '>', 1)->count();
+            if ($indirectReferrals < $plan->indirect_referrals_required) {
+                return false;
+            }
+        }
+        
+        // Check if user has sufficient balance for asset hold
+        if ($this->wallet && $this->wallet->deposit_balance < $plan->asset_hold) {
             return false;
         }
+        
+        return true;
     }
-    
-    if ($plan->indirect_referrals_required) {
-        $indirectReferrals = $this->referrals()->where('level', '>', 1)->count();
-        if ($indirectReferrals < $plan->indirect_referrals_required) {
+
+    /**
+     * Get available balance attribute
+     */
+    public function getAvailableBalanceAttribute()
+    {
+        return $this->wallet ? ($this->wallet->deposit_balance + $this->wallet->earning_balance + $this->wallet->referral_balance) : 0;
+    }
+
+    /**
+     * Check if user is active
+     */
+    public function isActive()
+    {
+        return $this->status === 'active';
+    }
+
+    /**
+     * Check if user can upgrade to next level
+     */
+    public function canUpgradeToLevel($level)
+    {
+        $targetPlan = InvestmentPlan::where('level', $level)->where('status', 'active')->first();
+        
+        if (!$targetPlan) {
             return false;
         }
+
+        // Check asset hold requirement
+        if ($this->total_asset_hold < $targetPlan->asset_hold) {
+            return false;
+        }
+
+        // Check referral requirements
+        if ($targetPlan->direct_referrals_required) {
+            $directReferrals = $this->referrals()->where('level_number', 1)->count();
+            if ($directReferrals < $targetPlan->direct_referrals_required) {
+                return false;
+            }
+        }
+
+        if ($targetPlan->indirect_referrals_required) {
+            $indirectReferrals = $this->referrals()->where('level_number', '>', 1)->count();
+            if ($indirectReferrals < $targetPlan->indirect_referrals_required) {
+                return false;
+            }
+        }
+
+        return true;
     }
-    
-    // Check if user has sufficient balance for asset hold
-    if ($this->wallet_balance < $plan->asset_hold) {
-        return false;
-    }
-    
-    return true;
-}
-// In User model, add these methods:
-
-
-
-
-
-
-
-public function getAvailableBalanceAttribute()
-{
-    return $this->wallet ? ($this->wallet->deposit_balance + $this->wallet->earning_balance + $this->wallet->referral_balance) : 0;
-}
 }

@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\SystemSettingsController;
 use App\Http\Controllers\Admin\KYCController;
 use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\LevelCommissionController;
 
     // Authentication Routes
     Route::get('/', [LandingPageController::class, 'index'])->name('landing');
@@ -57,7 +58,7 @@ use App\Http\Controllers\Admin\ReportController;
         // Notifications
         Route::get('/notifications', [UserController::class, 'notifications'])->name('notifications');
         Route::get('/notifications/{id}/mark-read', [UserController::class, 'markNotificationAsRead'])->name('notifications.mark-read');
-        Route::post('/notifications/mark-all-read', [UserController::class, 'markAllNotificationsAsRead'])->name('notifications.mark-all-read');
+        Route::get('/notifications/mark-all-read', [UserController::class, 'markAllNotificationsAsRead'])->name('notifications.mark-all-read');
         
         // Investments
         Route::get('/investments', [InvestmentController::class, 'index'])->name('investments.index');
@@ -88,7 +89,9 @@ use App\Http\Controllers\Admin\ReportController;
         Route::post('/wallet/deposit', [WalletController::class, 'processDeposit'])->name('wallet.process-deposit');
         Route::get('/wallet/transactions', [WalletController::class, 'transactions'])->name('wallet.transactions');
         Route::get('/wallet/transaction/{id}', [WalletController::class, 'transactionDetails'])->name('wallet.transaction-details');
-        
+        Route::post('/wallet/check-transaction-status', [WalletController::class, 'checkTransactionStatus'])
+    ->name('wallet.check-transaction-status')
+    ->middleware('auth');
         // Withdrawal routes (you'll need to create this controller too)
         Route::get('/withdraw', [WithdrawalController::class, 'create'])->name('withdraw.create');
         Route::get('/withdrawals/create', [WithdrawalController::class, 'create'])->name('withdraw.create');
@@ -158,5 +161,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/reports/users', [ReportController::class, 'usersReport'])->name('reports.users');
         Route::get('/reports/transactions', [ReportController::class, 'transactionsReport'])->name('reports.transactions');
         Route::get('/reports/financial', [ReportController::class, 'financialReport'])->name('reports.financial');
+//level commision
+        Route::get('/level-commissions', [LevelCommissionController::class, 'index'])->name('level-commissions.index');
+Route::get('/level-commissions/create', [LevelCommissionController::class, 'create'])->name('level-commissions.create');
+Route::post('/level-commissions', [LevelCommissionController::class, 'store'])->name('level-commissions.store');
+Route::get('/level-commissions/{id}', [LevelCommissionController::class, 'show'])->name('level-commissions.show');
+Route::get('/level-commissions/{id}/edit', [LevelCommissionController::class, 'edit'])->name('level-commissions.edit');
+Route::put('/level-commissions/{id}', [LevelCommissionController::class, 'update'])->name('level-commissions.update');
+Route::delete('/level-commissions/{id}', [LevelCommissionController::class, 'destroy'])->name('level-commissions.destroy');
     });
 });

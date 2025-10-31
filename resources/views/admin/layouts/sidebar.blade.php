@@ -43,7 +43,10 @@
         <a href="{{ route('admin.reports.index') }}" class="flex items-center py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white {{ request()->routeIs('admin.reports.*') ? 'bg-gray-700 text-white font-semibold' : 'text-gray-300' }}">
             <i class="fas fa-chart-bar mr-3 w-5"></i>Reports
         </a>
-        
+        <!-- Add this in the sidebar menu after the existing items -->
+<a href="{{ route('admin.level-commissions.index') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white {{ request()->routeIs('admin.level-commissions.*') ? 'bg-gray-700' : '' }}">
+    <i class="fas fa-sitemap mr-2"></i>Level Commissions
+</a>
         <a href="{{ route('admin.settings.index') }}" class="flex items-center py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white {{ request()->routeIs('admin.settings.*') ? 'bg-gray-700 text-white font-semibold' : 'text-gray-300' }}">
             <i class="fas fa-cog mr-3 w-5"></i>System Settings
         </a>

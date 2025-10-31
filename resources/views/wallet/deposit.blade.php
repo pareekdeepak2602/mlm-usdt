@@ -29,6 +29,9 @@
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
                             <i class="fas fa-check-circle me-2"></i>
                             {{ session('success') }}
+                            @if(session('transaction_id'))
+                                <br><small>Transaction ID: <strong>{{ session('transaction_id') }}</strong></small>
+                            @endif
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     @endif
@@ -66,7 +69,7 @@
                         </div>
                     </div>
 
-                    <form method="POST" action="{{ route('wallet.process-deposit') }}">
+                    <form method="POST" action="{{ route('wallet.process-deposit') }}" id="depositForm">
                         @csrf
                         
                         <div class="row">
@@ -79,7 +82,7 @@
                                                class="form-control @error('amount') is-invalid @enderror" 
                                                id="amount" 
                                                name="amount" 
-                                               value="{{ old('amount') }}" 
+                                               value="{{ old('amount', '100') }}" 
                                                step="0.01" 
                                                min="{{ $depositLimits['min_deposit'] }}" 
                                                @if($depositLimits['max_deposit'])
@@ -119,15 +122,15 @@
                                    class="form-control @error('txn_hash') is-invalid @enderror" 
                                    id="txn_hash" 
                                    name="txn_hash" 
-                                   value="{{ old('txn_hash') }}" 
-                                   placeholder="Enter your BSC transaction hash"
+                                   value="{{ old('txn_hash', '0x8f3e2c1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2') }}" 
+                                   placeholder="Enter your BSC transaction hash (0x...)"
                                    required
                                    style="background: var(--bg-primary); border-color: var(--border-color); color: var(--text-primary);">
                             @error('txn_hash')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                             <small class="form-text" style="color: var(--text-secondary);">
-                                Copy the transaction hash from your wallet after making the BEP20 transfer
+                                Copy the transaction hash from your wallet after making the BEP20 transfer. Format: 0x followed by 64 hexadecimal characters.
                             </small>
                         </div>
 
@@ -136,94 +139,19 @@
                             <ul class="mb-0" style="color: var(--text-primary);">
                                 <li>Send <strong>USDT BEP20</strong> only to our wallet address</li>
                                 <li>Ensure you are on <strong>Binance Smart Chain (BSC)</strong> network</li>
-                                <li>Copy and paste the BSC transaction hash correctly</li>
+                                <li>Copy and paste the BSC transaction hash correctly (0x... format)</li>
                                 <li>Minimum deposit amount is ${{ number_format($depositLimits['min_deposit'], 2) }} USDT</li>
                                 <li>Keep sufficient BNB for transaction fees</li>
+                                <li>Transaction verification may take 2-3 minutes</li>
                             </ul>
                         </div>
 
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success btn-lg">
+                            <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
                                 <i class="fas fa-paper-plane me-2"></i> Submit Deposit Request
                             </button>
                         </div>
                     </form>
-                </div>
-            </div>
-
-            <!-- Level Upgrade Information -->
-            <div class="card shadow mb-4" style="background: var(--card-bg); border-color: var(--card-border);">
-                <div class="card-header py-3" style="background: var(--bg-primary); border-color: var(--border-color);">
-                    <h6 class="m-0 font-weight-bold text-white">
-                        <i class="fas fa-level-up-alt me-2"></i>Upgrade Your Level for Higher Deposit Limits
-                    </h6>
-                </div>
-                <div class="card-body">
-                    @php
-                        $nextLevel = $user->current_level + 1;
-                        $nextPlan = App\Models\InvestmentPlan::where('level', $nextLevel)
-                                                            ->where('status', 'active')
-                                                            ->first();
-                    @endphp
-                    
-                    @if($nextPlan)
-                        <h6 class="font-weight-bold text-primary mb-3">Requirements for Level {{ $nextLevel }}:</h6>
-                        <div class="row text-center">
-                            @if($nextPlan->direct_referrals_required)
-                                <div class="col-md-4 mb-3">
-                                    <div class="border rounded p-3" style="border-color: var(--border-color) !important;">
-                                        <h5 class="text-primary">{{ $user->direct_referrals_count }} / {{ $nextPlan->direct_referrals_required }}</h5>
-                                        <small style="color: var(--text-secondary);">Direct Referrals (A)</small>
-                                        <div class="progress mt-2" style="height: 5px; background-color: var(--bg-secondary);">
-                                            <div class="progress-bar bg-primary" style="width: {{ min(100, ($user->direct_referrals_count / $nextPlan->direct_referrals_required) * 100) }}%"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
-                            
-                            @if($nextPlan->indirect_referrals_required)
-                                <div class="col-md-4 mb-3">
-                                    <div class="border rounded p-3" style="border-color: var(--border-color) !important;">
-                                        <h5 class="text-success">{{ $user->indirect_referrals_count }} / {{ $nextPlan->indirect_referrals_required }}</h5>
-                                        <small style="color: var(--text-secondary);">Indirect Referrals (B+C)</small>
-                                        <div class="progress mt-2" style="height: 5px; background-color: var(--bg-secondary);">
-                                            <div class="progress-bar bg-success" style="width: {{ min(100, ($user->indirect_referrals_count / $nextPlan->indirect_referrals_required) * 100) }}%"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
-                            
-                            <div class="col-md-4 mb-3">
-                                <div class="border rounded p-3" style="border-color: var(--border-color) !important;">
-                                    <h5 class="text-info">${{ number_format($user->total_asset_hold, 2) }} / ${{ number_format($nextPlan->asset_hold, 2) }}</h5>
-                                    <small style="color: var(--text-secondary);">Asset Hold Required</small>
-                                    <div class="progress mt-2" style="height: 5px; background-color: var(--bg-secondary);">
-                                        <div class="progress-bar bg-info" style="width: {{ min(100, ($user->total_asset_hold / $nextPlan->asset_hold) * 100) }}%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="mt-3 p-3 rounded" style="background: var(--bg-secondary); color: var(--text-primary);">
-                            <h6 class="font-weight-bold text-warning">Level {{ $nextLevel }} Benefits:</h6>
-                            <ul class="mb-0">
-                                <li>Daily Return: <strong>{{ $nextPlan->daily_percentage }}%</strong></li>
-                                <li>Deposit Range: <strong>${{ number_format($nextPlan->min_investment, 2) }} 
-                                    @if($nextPlan->max_investment)
-                                        - ${{ number_format($nextPlan->max_investment, 2) }}
-                                    @else
-                                        and above
-                                    @endif
-                                </strong></li>
-                                <li>Higher referral commissions</li>
-                            </ul>
-                        </div>
-                    @else
-                        <div class="text-center py-3">
-                            <i class="fas fa-trophy fa-2x text-warning mb-2"></i>
-                            <h6 style="color: var(--text-secondary);">You've reached the maximum level!</h6>
-                        </div>
-                    @endif
                 </div>
             </div>
         </div>
@@ -240,8 +168,8 @@
                 <div class="card-body">
                     <div class="text-center mb-3">
                         <div class="p-3 rounded border" style="background: var(--bg-secondary); border-color: var(--border-color) !important;">
-                            <code class="small" id="walletAddress" style="color: var(--text-primary);">0x742E4D6c4C8B6C4D8E6F7C5A3B2C1D0E9F8A7B6C</code>
-                            <button class="btn btn-sm btn-outline-warning ms-2" onclick="copyWalletAddress()">
+                            <code class="small" id="walletAddress" style="color: var(--text-primary); word-break: break-all;">0x742E4D6c4C8B6C4D8E6F7C5A3B2C1D0E9F8A7B6C</code>
+                            <button class="btn btn-sm btn-outline-warning ms-2" onclick="copyWalletAddress()" type="button">
                                 <i class="fas fa-copy"></i>
                             </button>
                         </div>
@@ -255,68 +183,6 @@
                             <i class="fas fa-exclamation-circle me-1"></i>
                             Send <strong>USDT BEP20</strong> only to this address
                         </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Network Information -->
-            <div class="card shadow mb-4" style="background: var(--card-bg); border-color: var(--card-border);">
-                <div class="card-header py-3" style="background: var(--bg-secondary); border-color: var(--border-color);">
-                    <h6 class="m-0 font-weight-bold text-primary">BSC Network Details</h6>
-                </div>
-                <div class="card-body">
-                    <div class="network-details">
-                        <div class="detail-item mb-2" style="color: var(--text-primary);">
-                            <strong>Network:</strong> Binance Smart Chain (BSC)
-                        </div>
-                        <div class="detail-item mb-2" style="color: var(--text-primary);">
-                            <strong>Token Type:</strong> USDT BEP20
-                        </div>
-                        <div class="detail-item mb-2" style="color: var(--text-primary);">
-                            <strong>Chain ID:</strong> 56 (Mainnet)
-                        </div>
-                        <div class="detail-item" style="color: var(--text-primary);">
-                            <strong>RPC URL:</strong> https://bsc-dataseed.binance.org/
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Deposit Steps -->
-            <div class="card shadow mb-4" style="background: var(--card-bg); border-color: var(--card-border);">
-                <div class="card-header py-3" style="background: var(--bg-secondary); border-color: var(--border-color);">
-                    <h6 class="m-0 font-weight-bold text-primary">How to Deposit (BEP20)</h6>
-                </div>
-                <div class="card-body">
-                    <div class="steps">
-                        <div class="step mb-3">
-                            <div class="step-number bg-warning">1</div>
-                            <div class="step-content">
-                                <strong style="color: var(--text-primary);">Switch to BSC Network</strong>
-                                <p class="mb-0 small" style="color: var(--text-secondary);">Ensure your wallet is connected to Binance Smart Chain</p>
-                            </div>
-                        </div>
-                        <div class="step mb-3">
-                            <div class="step-number bg-warning">2</div>
-                            <div class="step-content">
-                                <strong style="color: var(--text-primary);">Send USDT BEP20</strong>
-                                <p class="mb-0 small" style="color: var(--text-secondary);">Send USDT BEP20 to our wallet address</p>
-                            </div>
-                        </div>
-                        <div class="step mb-3">
-                            <div class="step-number bg-warning">3</div>
-                            <div class="step-content">
-                                <strong style="color: var(--text-primary);">Copy BSC Transaction Hash</strong>
-                                <p class="mb-0 small" style="color: var(--text-secondary);">Copy the transaction hash from BSC Scan</p>
-                            </div>
-                        </div>
-                        <div class="step">
-                            <div class="step-number bg-warning">4</div>
-                            <div class="step-content">
-                                <strong style="color: var(--text-primary);">Submit Details</strong>
-                                <p class="mb-0 small" style="color: var(--text-secondary);">Enter amount and transaction hash in the form</p>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -420,6 +286,32 @@
     background: rgba(var(--bs-info-rgb), 0.1);
     border-color: rgba(var(--bs-info-rgb), 0.2);
 }
+
+/* Loading state for submit button */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin-left: -10px;
+    margin-top: -10px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-right-color: transparent;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
 </style>
 @endpush
 
@@ -442,24 +334,17 @@ function copyWalletAddress() {
     });
 }
 
-// Update deposit limits based on level
 document.addEventListener('DOMContentLoaded', function() {
     const amountInput = document.getElementById('amount');
-    const userLevel = {{ Auth::user()->current_level }};
+    const txnHashInput = document.getElementById('txn_hash');
+    const depositForm = document.getElementById('depositForm');
+    const submitBtn = document.getElementById('submitBtn');
     
-    // You can add dynamic validation here if needed
-    amountInput.addEventListener('input', function() {
-        const amount = parseFloat(this.value);
-        const minDeposit = parseFloat(this.min);
-        const maxDeposit = this.max ? parseFloat(this.max) : null;
-        
-        if (amount < minDeposit) {
-            this.setCustomValidity(`Minimum deposit for Level ${userLevel} is $${minDeposit}`);
-        } else if (maxDeposit && amount > maxDeposit) {
-            this.setCustomValidity(`Maximum deposit for Level ${userLevel} is $${maxDeposit}`);
-        } else {
-            this.setCustomValidity('');
-        }
+    // Form submission loading state
+    depositForm.addEventListener('submit', function() {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('btn-loading');
+        submitBtn.innerHTML = 'Processing...';
     });
 });
 </script>

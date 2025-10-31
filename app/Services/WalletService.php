@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use App\Models\SystemSetting;
 use App\Models\Notification;
 use App\Models\InvestmentPlan;
+use App\Services\LevelReferralService;
 
 class WalletService
 {
@@ -65,7 +66,7 @@ class WalletService
                 'type' => 'success'
             ]);
         }
-        
+         LevelReferralService::processLevelReferralCommission($userId, $amount);
         Notification::create([
             'user_id' => $userId,
             'title' => 'Deposit Received',

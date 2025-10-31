@@ -146,4 +146,133 @@ class LevelService
         // Here you can also send email notification
         // Mail::to($user->email)->send(new LevelUpMail($user, $newLevel));
     }
+     public static function checkAndUpgradeLevel($user)
+    {
+        $currentLevel = $user->current_level;
+        $assetHold = $user->wallet ? $user->wallet->deposit_balance : 0;
+        
+        // Get the highest level the user qualifies for
+        $qualifiedPlan = InvestmentPlan::where('asset_hold', '<=', $assetHold)
+                                    ->where('status', 'active')
+                                    ->orderBy('level', 'desc')
+                                    ->first();
+
+        if (!$qualifiedPlan || $qualifiedPlan->level <= $currentLevel) {
+            return ['upgraded' => false, 'current_level' => $currentLevel];
+        }
+
+        // Check if user meets referral requirements for the qualified level
+        if (!self::meetsLevelRequirements($user, $qualifiedPlan)) {
+            return ['upgraded' => false, 'current_level' => $currentLevel];
+        }
+
+        // Upgrade user level
+        $oldLevel = $user->current_level;
+        $user->current_level = $qualifiedPlan->level;
+        $user->save();
+
+        Log::info("User level upgraded", [
+            'user_id' => $user->id,
+            'old_level' => $oldLevel,
+            'new_level' => $qualifiedPlan->level,
+            'asset_hold' => $assetHold
+        ]);
+
+        return [
+            'upgraded' => true,
+            'old_level' => $oldLevel,
+            'new_level' => $qualifiedPlan->level,
+            'plan_name' => $qualifiedPlan->name
+        ];
+    }
+
+    /**
+     * Check if user meets referral requirements for a plan
+     */
+    private static function meetsLevelRequirements($user, $plan)
+    {
+        // Check direct referrals requirement
+        if ($plan->direct_referrals_required) {
+            $directReferrals = $user->referrals()->where('level_number', 1)->count();
+            if ($directReferrals < $plan->direct_referrals_required) {
+                return false;
+            }
+        }
+
+        // Check indirect referrals requirement
+        if ($plan->indirect_referrals_required) {
+            $indirectReferrals = $user->referrals()->where('level_number', '>', 1)->count();
+            if ($indirectReferrals < $plan->indirect_referrals_required) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Get user's next level requirements
+     */
+    public static function getNextLevelRequirements($userId)
+    {
+        $user = User::with(['wallet', 'referrals'])->find($userId);
+        if (!$user) {
+            return null;
+        }
+
+        $nextLevel = $user->current_level + 1;
+        $nextPlan = InvestmentPlan::where('level', $nextLevel)
+                                ->where('status', 'active')
+                                ->first();
+
+        if (!$nextPlan) {
+            return null; // User is at max level
+        }
+
+        $directReferrals = $user->referrals()->where('level_number', 1)->count();
+        $indirectReferrals = $user->referrals()->where('level_number', '>', 1)->count();
+        $assetHold = $user->wallet ? $user->wallet->deposit_balance : 0;
+
+        return [
+            'next_level' => $nextLevel,
+            'plan_name' => $nextPlan->name,
+            'asset_hold_required' => $nextPlan->asset_hold,
+            'current_asset_hold' => $assetHold,
+            'direct_referrals_required' => $nextPlan->direct_referrals_required,
+            'current_direct_referrals' => $directReferrals,
+            'indirect_referrals_required' => $nextPlan->indirect_referrals_required,
+            'current_indirect_referrals' => $indirectReferrals,
+            'daily_percentage' => $nextPlan->daily_percentage,
+            'min_investment' => $nextPlan->min_investment,
+            'max_investment' => $nextPlan->max_investment
+        ];
+    }
+
+    /**
+     * Get user level progress
+     */
+    public static function getUserLevelProgress($userId)
+    {
+        $requirements = self::getNextLevelRequirements($userId);
+        if (!$requirements) {
+            return ['max_level_reached' => true];
+        }
+
+        $assetProgress = min(100, ($requirements['current_asset_hold'] / $requirements['asset_hold_required']) * 100);
+        
+        $directProgress = $requirements['direct_referrals_required'] ? 
+            min(100, ($requirements['current_direct_referrals'] / $requirements['direct_referrals_required']) * 100) : 100;
+            
+        $indirectProgress = $requirements['indirect_referrals_required'] ? 
+            min(100, ($requirements['current_indirect_referrals'] / $requirements['indirect_referrals_required']) * 100) : 100;
+
+        return [
+            'max_level_reached' => false,
+            'next_level' => $requirements['next_level'],
+            'asset_progress' => $assetProgress,
+            'direct_referrals_progress' => $directProgress,
+            'indirect_referrals_progress' => $indirectProgress,
+            'requirements' => $requirements
+        ];
+    }
 }

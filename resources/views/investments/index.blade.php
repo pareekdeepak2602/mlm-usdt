@@ -1,12 +1,12 @@
 @extends('layouts.app_new')
 
-@section('page-title', 'Investments')
+@section('page-title', 'Investment Levels')
 
 @section('content')
 <div class="container-fluid">
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Investments</h1>
+        <h1 class="h3 mb-0 text-gray-800">Investment Levels</h1>
         <a href="{{ route('wallet.deposit') }}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
             <i class="fas fa-plus fa-sm text-white-50"></i> Deposit Funds
         </a>
@@ -55,9 +55,27 @@
                         </div>
                     </div>
                     
-                    @if($userStats['next_level'])
+                    <!-- Current Level Benefits -->
                     <div class="mt-3 p-3 rounded" style="background: var(--bg-secondary); color: var(--text-primary);">
-                        <h6 class="font-weight-bold">Requirements for Level {{ $userStats['next_level']->level }}:</h6>
+                        <h6 class="font-weight-bold">Your Current Level {{ $userStats['current_level'] }} Benefits:</h6>
+                        @php
+                            $currentPlan = $plans->where('level', $userStats['current_level'])->first();
+                        @endphp
+                        @if($currentPlan)
+                            <div class="row mt-2">
+                                <div class="col-md-6">
+                                    <strong>Daily Income Rate:</strong> {{ $currentPlan->daily_percentage }}%
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Daily Earnings:</strong> ${{ number_format(($user->wallet->deposit_balance ?? 0) * ($currentPlan->daily_percentage / 100), 2) }}
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                    
+                    @if($userStats['next_level'])
+                    <div class="mt-3 p-3 rounded" style="background: rgba(255,193,7,0.1); border-left: 4px solid #ffc107;">
+                        <h6 class="font-weight-bold text-warning">Requirements for Level {{ $userStats['next_level']->level }}:</h6>
                         <ul class="mb-0">
                             @if($userStats['next_level']->direct_referrals_required)
                                 <li>Direct Referrals (A): {{ $userStats['next_level']->direct_referrals_required }} 
@@ -77,25 +95,25 @@
         </div>
     </div>
 
-    <!-- Investment Plans -->
+    <!-- Investment Levels Overview -->
     <div class="row">
         <div class="col-lg-12 mb-4">
             <div class="card shadow" style="background: var(--card-bg); border-color: var(--card-border);">
                 <div class="card-header py-3" style="background: var(--bg-secondary); border-color: var(--border-color);">
-                    <h6 class="m-0 font-weight-bold text-primary">Available Investment Plans</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">Investment Levels & Daily Returns</h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         @foreach($plans as $plan)
                             @php
-                                $canInvest = App\Services\LevelService::canUserInvestInPlan(Auth::user(), $plan);
                                 $isCurrentLevel = $userStats['current_level'] == $plan->level;
                                 $isUnlocked = $userStats['current_level'] >= $plan->level;
+                                $isLocked = $userStats['current_level'] < $plan->level;
                             @endphp
                             
                             <div class="col-lg-4 col-md-6 mb-4">
                                 <div class="card h-100 position-relative 
-                                    {{ !$isUnlocked ? 'opacity-50' : '' }}"
+                                    {{ $isLocked ? 'opacity-50' : '' }}"
                                     style="background: var(--card-bg); border-color: var(--card-border); border-left: 4px solid {{ $plan->level === 0 ? '#4e73df' : ($plan->level === 1 ? '#36b9cc' : ($plan->level === 2 ? '#f6c23e' : ($plan->level === 3 ? '#1cc88a' : ($plan->level === 4 ? '#858796' : ($plan->level === 5 ? '#5a5c69' : '#e74a3b'))))) }} !important;">
                                     
                                     @if($plan->is_popular)
@@ -106,7 +124,13 @@
                                     
                                     @if($isCurrentLevel)
                                         <div class="position-absolute top-0 start-0 bg-primary text-white px-3 py-1 rounded-br-lg" style="font-size: 0.8rem; font-weight: bold;">
-                                            Current
+                                            Current Level
+                                        </div>
+                                    @endif
+
+                                    @if($isLocked)
+                                        <div class="position-absolute top-50 start-50 translate-middle">
+                                            <i class="fas fa-lock fa-2x text-secondary"></i>
                                         </div>
                                     @endif
 
@@ -127,17 +151,7 @@
                                         
                                         <div class="plan-details">
                                             <div class="d-flex justify-content-between py-1">
-                                                <span style="color: var(--text-secondary);">Investment Range:</span>
-                                                <strong style="color: var(--text-primary);">${{ number_format($plan->min_investment, 0) }} 
-                                                    @if($plan->max_investment)
-                                                        - ${{ number_format($plan->max_investment, 0) }}
-                                                    @else
-                                                        +
-                                                    @endif
-                                                </strong>
-                                            </div>
-                                            <div class="d-flex justify-content-between py-1">
-                                                <span style="color: var(--text-secondary);">Asset Hold:</span>
+                                                <span style="color: var(--text-secondary);">Min. Asset Hold:</span>
                                                 <strong style="color: var(--text-primary);">${{ number_format($plan->asset_hold, 0) }}</strong>
                                             </div>
                                             
@@ -160,35 +174,90 @@
                                             @endif
                                             
                                             <div class="d-flex justify-content-between py-1">
-                                                <span style="color: var(--text-secondary);">Duration:</span>
-                                                <strong style="color: var(--text-primary);">{{ $plan->duration_days }} days</strong>
-                                            </div>
-                                            <div class="d-flex justify-content-between py-1">
-                                                <span style="color: var(--text-secondary);">Total Return:</span>
-                                                <strong class="text-success">{{ number_format($plan->daily_percentage * $plan->duration_days, 1) }}%</strong>
+                                                <span style="color: var(--text-secondary);">Annual Return:</span>
+                                                <strong class="text-success">{{ number_format($plan->daily_percentage * 365, 1) }}%</strong>
                                             </div>
                                         </div>
                                         
                                         <div class="d-grid mt-3">
-                                            @if($canInvest['success'])
-                                                <a href="{{ route('investments.create', $plan->id) }}" 
-                                                   class="btn" 
-                                                   style="background-color: {{ $plan->level === 0 ? '#4e73df' : ($plan->level === 1 ? '#36b9cc' : ($plan->level === 2 ? '#f6c23e' : ($plan->level === 3 ? '#1cc88a' : ($plan->level === 4 ? '#858796' : ($plan->level === 5 ? '#5a5c69' : '#e74a3b'))))) }}; border-color: {{ $plan->level === 0 ? '#4e73df' : ($plan->level === 1 ? '#36b9cc' : ($plan->level === 2 ? '#f6c23e' : ($plan->level === 3 ? '#1cc88a' : ($plan->level === 4 ? '#858796' : ($plan->level === 5 ? '#5a5c69' : '#e74a3b'))))) }}; color: white;">
-                                                    Invest Now
-                                                </a>
+                                            @if($isCurrentLevel)
+                                                <div class="text-center p-2 rounded" style="background: rgba(78, 115, 223, 0.1);">
+                                                    <small class="text-primary">
+                                                        <i class="fas fa-check-circle"></i> Your Current Level
+                                                    </small>
+                                                    <br>
+                                                    <small style="color: var(--text-secondary);">
+                                                        Earning {{ $plan->daily_percentage }}% daily
+                                                    </small>
+                                                </div>
+                                            @elseif($isUnlocked)
+                                                <div class="text-center p-2 rounded" style="background: rgba(40, 167, 69, 0.1);">
+                                                    <small class="text-success">
+                                                        <i class="fas fa-unlock"></i> Unlocked
+                                                    </small>
+                                                    <br>
+                                                    <small style="color: var(--text-secondary);">
+                                                        Upgrade to activate
+                                                    </small>
+                                                </div>
                                             @else
-                                                <button class="btn btn-outline-secondary" disabled title="Requirements not met">
-                                                    Locked
-                                                </button>
-                                                <small class="mt-1 d-block text-center" style="color: var(--text-secondary);">
-                                                    Level {{ $plan->level }} Required
-                                                </small>
+                                                <div class="text-center p-2 rounded" style="background: rgba(108, 117, 125, 0.1);">
+                                                    <small class="text-secondary">
+                                                        <i class="fas fa-lock"></i> Locked
+                                                    </small>
+                                                    <br>
+                                                    <small style="color: var(--text-secondary);">
+                                                        Meet requirements to unlock
+                                                    </small>
+                                                </div>
                                             @endif
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works -->
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow" style="background: var(--card-bg); border-color: var(--card-border);">
+                <div class="card-header py-3" style="background: var(--bg-secondary); border-color: var(--border-color);">
+                    <h6 class="m-0 font-weight-bold text-primary">How It Works</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3">
+                                <div class="rounded-circle bg-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                    <i class="fas fa-wallet text-white fa-lg"></i>
+                                </div>
+                                <h5 style="color: var(--text-primary);">1. Deposit Funds</h5>
+                                <p style="color: var(--text-secondary);">Deposit USDT to your wallet. Your deposit balance determines your daily earnings.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3">
+                                <div class="rounded-circle bg-success d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                    <i class="fas fa-chart-line text-white fa-lg"></i>
+                                </div>
+                                <h5 style="color: var(--text-primary);">2. Earn Daily Income</h5>
+                                <p style="color: var(--text-secondary);">Earn daily returns based on your current level percentage and deposit balance.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="p-3">
+                                <div class="rounded-circle bg-warning d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                    <i class="fas fa-trophy text-white fa-lg"></i>
+                                </div>
+                                <h5 style="color: var(--text-primary);">3. Level Up</h5>
+                                <p style="color: var(--text-secondary);">Meet referral and asset requirements to level up and increase your daily percentage.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -233,7 +302,9 @@
                                         <td>{{ $plan->indirect_referrals_required ?: '-' }}</td>
                                         <td>${{ number_format($plan->asset_hold, 0) }}</td>
                                         <td>
-                                            @if($meetsRequirements)
+                                            @if($isCurrentLevel)
+                                                <span class="badge bg-primary">Active</span>
+                                            @elseif($meetsRequirements)
                                                 <span class="badge bg-success">Eligible</span>
                                             @else
                                                 <span class="badge bg-warning text-dark">Requirements Needed</span>
@@ -248,132 +319,74 @@
             </div>
         </div>
     </div>
+    <!-- Add this section to your investments.index blade file -->
 
-    <!-- Your Investments -->
-    <div class="row">
-        <div class="col-lg-12 mb-4">
-            <div class="card shadow" style="background: var(--card-bg); border-color: var(--card-border);">
-                <div class="card-header py-3 d-flex justify-content-between align-items-center" style="background: var(--bg-secondary); border-color: var(--border-color);">
-                    <h6 class="m-0 font-weight-bold text-primary">Your Active Investments</h6>
-                    <span class="badge bg-primary">{{ $investments->where('status', 'active')->count() }} Active</span>
-                </div>
-                <div class="card-body">
-                    @if($investments->where('status', 'active')->count() > 0)
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover" style="background: var(--card-bg); color: var(--text-primary);">
-                                <thead style="background: var(--bg-secondary);">
-                                    <tr>
-                                        <th style="color: var(--text-primary);">Plan</th>
-                                        <th style="color: var(--text-primary);">Level</th>
-                                        <th style="color: var(--text-primary);">Amount</th>
-                                        <th style="color: var(--text-primary);">Daily Income</th>
-                                        <th style="color: var(--text-primary);">Total Earned</th>
-                                        <th style="color: var(--text-primary);">Start Date</th>
-                                        <th style="color: var(--text-primary);">End Date</th>
-                                        <th style="color: var(--text-primary);">Days Left</th>
-                                        <th style="color: var(--text-primary);">Status</th>
-                                        <th style="color: var(--text-primary);">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($investments->where('status', 'active') as $investment)
-                                        <tr>
-                                            <td>
-                                                <strong style="color: var(--text-primary);">{{ $investment->plan->name }}</strong>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-secondary">Level {{ $investment->plan->level }}</span>
-                                            </td>
-                                            <td style="color: var(--text-primary);">${{ number_format($investment->amount, 2) }}</td>
-                                            <td class="text-success">
-                                                <strong>${{ number_format($investment->daily_income, 2) }}</strong>
-                                                <br>
-                                                <small style="color: var(--text-secondary);">{{ $investment->plan->daily_percentage }}% daily</small>
-                                            </td>
-                                            <td class="text-success font-weight-bold">${{ number_format($investment->total_earned, 2) }}</td>
-                                            <td style="color: var(--text-primary);">{{ $investment->start_date->format('M d, Y') }}</td>
-                                            <td style="color: var(--text-primary);">{{ $investment->end_date->format('M d, Y') }}</td>
-                                            <td>
-                                                <span class="badge bg-{{ $investment->days_left <= 7 ? 'warning' : 'info' }}">
-                                                    {{ $investment->days_left }} days
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-success">
-                                                    <i class="fas fa-check-circle"></i> Active
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <a href="{{ route('investments.show', $investment->id) }}" class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-chart-line"></i> Details
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @else
-                        <div class="text-center py-5">
-                            <i class="fas fa-chart-line fa-4x text-gray-300 mb-3"></i>
-                            <h5 style="color: var(--text-secondary);">No Active Investments</h5>
-                            <p style="color: var(--text-secondary);" class="mb-4">Start investing to earn daily returns</p>
-                            <a href="#plans" class="btn btn-primary">View Investment Plans</a>
-                        </div>
-                    @endif
-                </div>
+<!-- Level Referral Commissions -->
+<div class="row">
+    <div class="col-lg-12 mb-4">
+        <div class="card shadow" style="background: var(--card-bg); border-color: var(--card-border);">
+            <div class="card-header py-3" style="background: var(--bg-secondary); border-color: var(--border-color);">
+                <h6 class="m-0 font-weight-bold text-primary">Level Referral Commissions</h6>
             </div>
-        </div>
-    </div>
-
-    <!-- Completed Investments -->
-    @if($investments->where('status', 'completed')->count() > 0)
-    <div class="row">
-        <div class="col-lg-12 mb-4">
-            <div class="card shadow" style="background: var(--card-bg); border-color: var(--card-border);">
-                <div class="card-header py-3" style="background: var(--bg-secondary); border-color: var(--border-color);">
-                    <h6 class="m-0 font-weight-bold text-primary">Completed Investments</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover" style="background: var(--card-bg); color: var(--text-primary);">
-                            <thead style="background: var(--bg-secondary);">
-                                <tr>
-                                    <th style="color: var(--text-primary);">Plan</th>
-                                    <th style="color: var(--text-primary);">Level</th>
-                                    <th style="color: var(--text-primary);">Amount</th>
-                                    <th style="color: var(--text-primary);">Total Earned</th>
-                                    <th style="color: var(--text-primary);">Start Date</th>
-                                    <th style="color: var(--text-primary);">End Date</th>
-                                    <th style="color: var(--text-primary);">Status</th>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" style="background: var(--card-bg); color: var(--text-primary);">
+                        <thead style="background: var(--bg-secondary);">
+                            <tr>
+                                <th class="font-weight-bold">Level</th>
+                                <th class="font-weight-bold text-success">A (Direct)</th>
+                                <th class="font-weight-bold text-info">B</th>
+                                <th class="font-weight-bold text-warning">C</th>
+                                <th class="font-weight-bold">Your Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($plans as $plan)
+                                @php
+                                    $commissionRates = App\Services\LevelReferralService::getCommissionRates($plan->level);
+                                    $isCurrentLevel = $userStats['current_level'] == $plan->level;
+                                    $isEligible = $commissionRates && ($commissionRates->direct_percentage > 0 || $commissionRates->level_b_percentage > 0 || $commissionRates->level_c_percentage > 0);
+                                @endphp
+                                <tr style="{{ $isCurrentLevel ? 'background: rgba(78, 115, 223, 0.1) !important;' : '' }}">
+                                    <td class="font-weight-bold">
+                                        Level {{ $plan->level }}
+                                        @if($isCurrentLevel)
+                                            <span class="badge bg-primary ml-1">Current</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-success font-weight-bold">
+                                        {{ $commissionRates && $commissionRates->direct_percentage > 0 ? $commissionRates->direct_percentage . '%' : '-' }}
+                                    </td>
+                                    <td class="text-info font-weight-bold">
+                                        {{ $commissionRates && $commissionRates->level_b_percentage > 0 ? $commissionRates->level_b_percentage . '%' : '-' }}
+                                    </td>
+                                    <td class="text-warning font-weight-bold">
+                                        {{ $commissionRates && $commissionRates->level_c_percentage > 0 ? $commissionRates->level_c_percentage . '%' : '-' }}
+                                    </td>
+                                    <td>
+                                        @if($isCurrentLevel && $isEligible)
+                                            <span class="badge bg-success">Earning Commissions</span>
+                                        @elseif($isEligible)
+                                            <span class="badge bg-info">Eligible</span>
+                                        @else
+                                            <span class="badge bg-secondary">No Commissions</span>
+                                        @endif
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($investments->where('status', 'completed') as $investment)
-                                    <tr>
-                                        <td style="color: var(--text-primary);">{{ $investment->plan->name }}</td>
-                                        <td>
-                                            <span class="badge bg-secondary">Level {{ $investment->plan->level }}</span>
-                                        </td>
-                                        <td style="color: var(--text-primary);">${{ number_format($investment->amount, 2) }}</td>
-                                        <td class="text-success font-weight-bold">${{ number_format($investment->total_earned, 2) }}</td>
-                                        <td style="color: var(--text-primary);">{{ $investment->start_date->format('M d, Y') }}</td>
-                                        <td style="color: var(--text-primary);">{{ $investment->end_date->format('M d, Y') }}</td>
-                                        <td>
-                                            <span class="badge bg-info">
-                                                <i class="fas fa-flag-checkered"></i> Completed
-                                            </span>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3 p-3 rounded" style="background: var(--bg-secondary);">
+                    <small class="text-muted">
+                        <strong>How it works:</strong> When your referrals deposit funds, you earn commissions based on your current level. 
+                        Level 0-1 don't earn referral commissions. From Level 2 onwards, you earn percentage-based commissions from your downline deposits.
+                    </small>
                 </div>
             </div>
         </div>
     </div>
-    @endif
+</div>
 </div>
 
 <style>
@@ -425,6 +438,11 @@
 /* Table hover effects */
 .table-hover tbody tr:hover {
     background-color: var(--bg-secondary) !important;
+}
+
+/* Lock icon positioning */
+.position-absolute.top-50.start-50 {
+    z-index: 1;
 }
 </style>
 @endsection
