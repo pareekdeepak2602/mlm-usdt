@@ -37,5 +37,6 @@ return [
     'app_token' => env('TRANSACTION_VERIFIER_APP_TOKEN'),
     'url' => env('TRANSACTION_VERIFIER_URL'),
     'network' => env('TRANSACTION_VERIFIER_NETWORK', 'bsc_testnet'),
+    'company_wallet' => env('COMPANY_WALLET', '0x5CE2C945eeD9FBA974363fF028D86ed641b7b185'),
 ],
 ];

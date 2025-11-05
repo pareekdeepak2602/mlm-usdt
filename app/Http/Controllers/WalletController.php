@@ -40,7 +40,7 @@ class WalletController extends Controller
     public function processDeposit(Request $request)
     {
         $request->validate([
-            'amount' => 'required|numeric',
+            'amount' => 'required|numeric|50',
             'txn_hash' => 'required|string|max:255',
         ], [
             'txn_hash.required' => 'Transaction hash is required.',

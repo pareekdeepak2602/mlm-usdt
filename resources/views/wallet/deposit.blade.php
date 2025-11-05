@@ -100,7 +100,10 @@
                                                name="amount" 
                                                value="{{ old('amount', '100') }}" 
                                                step="0.01" 
-                                              
+                                               min="{{ $depositLimits['min_deposit'] }}" 
+                                               @if($depositLimits['max_deposit'])
+                                                   max="{{ $depositLimits['max_deposit'] }}"
+                                               @endif
                                                placeholder="Enter amount"
                                                required
                                                style="background: var(--bg-primary); border-color: var(--border-color); color: var(--text-primary);">
@@ -245,7 +248,7 @@
                 <div class="card-body">
                     <div class="text-center mb-3">
                         <div class="p-3 rounded border" style="background: var(--bg-secondary); border-color: var(--border-color) !important;">
-                            <code class="small" id="walletAddress" style="color: var(--text-primary); word-break: break-all;">{{ config('services.transaction_verifier.company_wallet', '0x5CE2C945eeD9FBA974363fF028D86ed641b7b185') }}</code>
+                            <code class="small" id="walletAddress" style="color: var(--text-primary); word-break: break-all;">{{ config('services.transaction_verifier.company_wallet', '0x742E4D6c4C8B6C4D8E6F7C5A3B2C1D0E9F8A7B6C') }}</code>
                             <button class="btn btn-sm btn-outline-warning ms-2" onclick="copyWalletAddress()" type="button">
                                 <i class="fas fa-copy"></i>
                             </button>
