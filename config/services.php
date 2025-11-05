@@ -30,8 +30,12 @@ return [
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
+
 'transaction_verifier' => [
-    'url' => env('TRANSACTION_VERIFIER_URL', 'https://your-api-server.com/api'),
-    'key' => env('TRANSACTION_VERIFIER_API_KEY', 'your-api-key'),
+    'key' => env('TRANSACTION_VERIFIER_KEY'),
+    'secret' => env('TRANSACTION_VERIFIER_SECRET'),
+    'app_token' => env('TRANSACTION_VERIFIER_APP_TOKEN'),
+    'url' => env('TRANSACTION_VERIFIER_URL'),
+    'network' => env('TRANSACTION_VERIFIER_NETWORK', 'bsc_testnet'),
 ],
 ];

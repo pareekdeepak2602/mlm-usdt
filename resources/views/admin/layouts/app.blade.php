@@ -32,7 +32,7 @@
                     
                     <div class="flex items-center space-x-3 md:space-x-4">
                         <span class="text-sm md:text-base text-gray-700 hidden sm:inline">
-                            Welcome, {{ Auth::user()->name }}
+                            Welcome, {{ Auth::guard('admin')->user()->name }}
                         </span>
                         <form method="POST" action="{{ route('admin.logout') }}">
                             @csrf
@@ -74,18 +74,28 @@
             function toggleSidebar() {
                 sidebar.classList.toggle('-translate-x-full');
                 sidebarOverlay.classList.toggle('hidden');
-                document.body.classList.toggle('overflow-hidden'); // Prevent scrolling body when menu is open
+                document.body.classList.toggle('overflow-hidden');
             }
 
-            mobileMenuButton.addEventListener('click', toggleSidebar);
-            sidebarCloseButton.addEventListener('click', toggleSidebar);
-            sidebarOverlay.addEventListener('click', toggleSidebar);
+            if (mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', toggleSidebar);
+            }
+            
+            if (sidebarCloseButton) {
+                sidebarCloseButton.addEventListener('click', toggleSidebar);
+            }
+            
+            if (sidebarOverlay) {
+                sidebarOverlay.addEventListener('click', toggleSidebar);
+            }
 
             // Close sidebar on desktop on resize if it's open
             window.addEventListener('resize', () => {
-                if (window.innerWidth >= 768 && !sidebar.classList.contains('-translate-x-full')) {
+                if (window.innerWidth >= 768 && sidebar && !sidebar.classList.contains('-translate-x-full')) {
                     sidebar.classList.add('-translate-x-full');
-                    sidebarOverlay.classList.add('hidden');
+                    if (sidebarOverlay) {
+                        sidebarOverlay.classList.add('hidden');
+                    }
                     document.body.classList.remove('overflow-hidden');
                 }
             });

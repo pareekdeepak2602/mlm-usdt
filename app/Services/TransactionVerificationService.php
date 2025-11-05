@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use App\Models\InvestmentPlan;
 use App\Models\SystemSetting;
 use App\Models\Notification;
+use App\Utils\HmacGenerator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -16,15 +17,17 @@ class TransactionVerificationService
 {
     private $apiBaseUrl;
     private $apiKey;
+    private $network;
 
     public function __construct()
     {
-        $this->apiBaseUrl = config('services.transaction_verifier.url', 'https://your-api-server.com/api');
-        $this->apiKey = config('services.transaction_verifier.key', 'your-api-key');
+        $this->apiBaseUrl = 'https://api.smartchoice.org.in';
+        $this->apiKey = config('services.transaction_verifier.key');
+        $this->network = config('services.transaction_verifier.network', 'bsc_testnet');
     }
 
     /**
-     * Verify transaction hash and process deposit
+     * Verify transaction hash and process deposit using Node.js API
      */
     public function verifyAndProcessDeposit($userId, $amount, $txnHash, $planId = null)
     {
@@ -34,10 +37,16 @@ class TransactionVerificationService
                 return ['success' => false, 'message' => 'User not found'];
             }
 
-            // Step 1: Verify transaction hash via API
-            $verificationResult = $this->verifyTransactionHash($txnHash, $amount);
+            // Step 1: Verify transaction via Node.js API
+            $verificationResult = $this->verifyTransactionWithNodeAPI($txnHash, $amount, $user);
             
             if (!$verificationResult['success']) {
+                Log::error('Transaction verification failed', [
+                    'user_id' => $userId,
+                    'txn_hash' => $txnHash,
+                    'amount' => $amount,
+                    'error' => $verificationResult['message']
+                ]);
                 return $verificationResult;
             }
 
@@ -62,92 +71,78 @@ class TransactionVerificationService
     }
 
     /**
-     * Verify transaction hash with external API
+     * Verify transaction using Node.js API with HMAC authentication
      */
-    private function verifyTransactionHash($txnHash, $amount)
-    {
-        try {
-            // For now, we'll fake the API response - replace with actual API call later
-            $fakeApiResponse = $this->fakeTransactionVerification($txnHash, $amount);
-            
-            // Actual API implementation (commented out for now)
-            /*
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
+  private function verifyTransactionWithNodeAPI($txnHash, $amount, $user)
+{
+    try {
+        $requestData = [
+            'txHash' => $txnHash,
+            'toAddress' => $this->getCompanyWalletAddress(), // Company wallet
+            'amount' => $amount,
+            'userId' => $user->id
+        ];
+
+        // Generate timestamp (milliseconds)
+        $timestamp = round(microtime(true) * 1000);
+
+        // Load secrets from config (.env)
+        $apiSecret = config('services.transaction_verifier.secret');
+        $apiKey = config('services.transaction_verifier.key');
+        $appToken = config('services.transaction_verifier.app_token');
+
+        // ✅ Generate signature
+        $signature = \App\Utils\HmacGenerator::generateSignature($requestData, $apiSecret, $timestamp);
+
+        // ✅ Make secure request to Node.js API
+        $response = \Illuminate\Support\Facades\Http::timeout(30)
+            ->withHeaders([
+                'x-api-key'    => $apiKey,
+                'x-timestamp'  => $timestamp,
+                'x-signature'  => $signature,
+                'x-app-token'  => $appToken,
                 'Content-Type' => 'application/json',
-            ])->post($this->apiBaseUrl . '/verify-transaction', [
-                'txn_hash' => $txnHash,
-                'amount' => $amount,
-                'currency' => 'USDT',
-                'network' => 'BEP20'
+            ])
+            ->post($this->apiBaseUrl . '/api/confirm-payment', $requestData);
+
+        if (!$response->successful()) {
+            \Illuminate\Support\Facades\Log::error('Node.js API request failed', [
+                'status' => $response->status(),
+                'body' => $response->body(),
             ]);
+            return ['success' => false, 'message' => 'Transaction verification service unavailable'];
+        }
 
-            if (!$response->successful()) {
-                return [
-                    'success' => false,
-                    'message' => 'Transaction verification service unavailable'
-                ];
-            }
+        $apiData = $response->json();
 
-            $apiData = $response->json();
-            */
-            
-            $apiData = $fakeApiResponse;
-
-            if ($apiData['status'] === 'success') {
-                return [
-                    'success' => true,
-                    'message' => 'Transaction verified successfully',
-                    'data' => $apiData['data']
-                ];
-            } else {
-                return [
-                    'success' => false,
-                    'message' => $apiData['message'] ?? 'Transaction verification failed'
-                ];
-            }
-
-        } catch (\Exception $e) {
-            Log::error('API Verification Error: ' . $e->getMessage());
+        if (isset($apiData['status']) && $apiData['status'] === 'success') {
             return [
-                'success' => false,
-                'message' => 'Transaction verification service error'
+                'success' => true,
+                'message' => $apiData['message'] ?? 'Transaction verified successfully',
+                'data' => $apiData['data'] ?? $apiData,
             ];
         }
+
+        return [
+            'success' => false,
+            'message' => $apiData['message'] ?? 'Transaction verification failed',
+        ];
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Node.js API Verification Error: ' . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Transaction verification service error: ' . $e->getMessage(),
+        ];
     }
+}
 
     /**
-     * Fake transaction verification - replace with real API
+     * Get company wallet address (you can store this in database or config)
      */
-    private function fakeTransactionVerification($txnHash, $amount)
+    private function getCompanyWalletAddress()
     {
-        // Simulate API delay
-        sleep(2);
-
-        // Basic validation of transaction hash format
-        // if (!preg_match('/^0x[a-fA-F0-9]{64}$/', $txnHash)) {
-        //     return [
-        //         'status' => 'error',
-        //         'message' => 'Invalid transaction hash format'
-        //     ];
-        // }
-
-        // Simulate successful verification
-        return [
-            'status' => 'success',
-            'message' => 'Transaction verified successfully',
-            'data' => [
-                'txn_hash' => $txnHash,
-                'amount' => $amount,
-                'confirmed' => true,
-                'confirmations' => 15,
-                'from_address' => '0x' . substr(md5(uniqid()), 0, 40),
-                'to_address' => '0x742E4D6c4C8B6C4D8E6F7C5A3B2C1D0E9F8A7B6C',
-                'block_number' => rand(20000000, 25000000),
-                'timestamp' => now()->timestamp,
-                'network' => 'BSC'
-            ]
-        ];
+        // You can store this in system settings or config
+        return SystemSetting::getValue('company_usdt_wallet', '0x5CE2C945eeD9FBA974363fF028D86ed641b7b185');
     }
 
     /**
@@ -164,44 +159,54 @@ class TransactionVerificationService
      * Process verified deposit
      */
     private function processVerifiedDeposit($user, $amount, $txnHash, $planId, $verificationData)
-{
-    return DB::transaction(function () use ($user, $amount, $txnHash, $planId, $verificationData) {
-        
-        // USE WalletService INSTEAD OF MANUAL PROCESSING
-        $depositResult = WalletService::deposit($user->id, $amount, $txnHash);
-        
-        if (!$depositResult['success']) {
-            throw new \Exception($depositResult['message']);
-        }
+    {
+        return DB::transaction(function () use ($user, $amount, $txnHash, $planId, $verificationData) {
+            
+            // Use WalletService for deposit processing
+            $depositResult = WalletService::deposit($user->id, $amount, $txnHash);
+            
+            if (!$depositResult['success']) {
+                throw new \Exception($depositResult['message']);
+            }
 
-        // Update transaction details with verification data
-        $transaction = Transaction::where('usdt_txn_hash', $txnHash)
-                                ->where('user_id', $user->id)
-                                ->first();
-        
-        if ($transaction) {
-            $transaction->details = json_encode([
-                'verified_data' => $verificationData,
-                'plan_id' => $planId,
-                'type' => 'BEP20 Deposit'
+            // Update transaction details with verification data
+            $transaction = Transaction::where('usdt_txn_hash', $txnHash)
+                                    ->where('user_id', $user->id)
+                                    ->first();
+            
+            if ($transaction) {
+                $transaction->details = json_encode([
+                    'verified_data' => $verificationData,
+                    'plan_id' => $planId,
+                    'network' => $verificationData['network'] ?? 'BSC',
+                    'block_number' => $verificationData['blockNumber'] ?? null,
+                    'type' => 'BEP20 Deposit',
+                    'verified_at' => now()->toDateTimeString()
+                ]);
+                
+                // Update status based on verification
+                $transaction->status = 'completed';
+                $transaction->save();
+
+                // Update user's wallet and handle activation
+                $this->handleUserActivation($user, $amount);
+            }
+
+            Log::info("Deposit processed successfully via Node.js API", [
+                'user_id' => $user->id,
+                'amount' => $amount,
+                'txn_hash' => $txnHash,
+                'verification_data' => $verificationData
             ]);
-            $transaction->save();
-        }
 
-        Log::info("Deposit processed successfully", [
-            'user_id' => $user->id,
-            'amount' => $amount,
-            'txn_hash' => $txnHash
-        ]);
-
-        return [
-            'success' => true,
-            'message' => 'Deposit processed successfully',
-            'transaction_id' => $transaction->txn_id,
-            'wallet_balance' => $user->wallet->deposit_balance
-        ];
-    });
-}
+            return [
+                'success' => true,
+                'message' => 'Deposit processed successfully',
+                'transaction_id' => $transaction->txn_id ?? null,
+                'wallet_balance' => $user->wallet->deposit_balance
+            ];
+        });
+    }
 
     /**
      * Handle user activation and level management
@@ -294,22 +299,57 @@ class TransactionVerificationService
     }
 
     /**
-     * Get transaction status
+     * Get transaction status from both local DB and Node.js API
      */
     public function getTransactionStatus($txnHash)
     {
         $transaction = Transaction::where('usdt_txn_hash', $txnHash)->first();
         
         if (!$transaction) {
-            return ['success' => false, 'message' => 'Transaction not found'];
+            return ['success' => false, 'message' => 'Transaction not found in local database'];
         }
+
+        // Optionally verify with Node.js API for latest status
+        $apiStatus = $this->verifyTransactionWithNodeAPI($txnHash, $transaction->amount, $transaction->user);
 
         return [
             'success' => true,
             'status' => $transaction->status,
             'amount' => $transaction->amount,
             'created_at' => $transaction->created_at,
-            'user_id' => $transaction->user_id
+            'user_id' => $transaction->user_id,
+            'api_verification' => $apiStatus
         ];
+    }
+
+    /**
+     * Get real-time transaction status from blockchain via Node.js API
+     */
+    public function getRealTimeTransactionStatus($txnHash)
+    {
+        $requestData = [
+            'txHash' => $txnHash,
+            'timestamp' => time()
+        ];
+
+        $signature = HmacGenerator::generateSignature($requestData, $this->apiKey);
+
+        try {
+            $response = Http::timeout(15)
+                ->withHeaders([
+                    'X-API-Key' => $this->apiKey,
+                    'X-Signature' => $signature,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post($this->apiBaseUrl . '/api/transaction-status', $requestData);
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to get real-time transaction status: ' . $e->getMessage());
+        }
+
+        return ['success' => false, 'message' => 'Unable to fetch real-time status'];
     }
 }

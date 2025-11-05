@@ -86,6 +86,8 @@ use App\Http\Controllers\Admin\LevelCommissionController;
 
             Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
         Route::get('/wallet/deposit', [WalletController::class, 'deposit'])->name('wallet.deposit');
+        Route::post('/wallet/check-realtime-status', [WalletController::class, 'getRealTimeStatus'])
+    ->name('wallet.realtime-status');
         Route::post('/wallet/deposit', [WalletController::class, 'processDeposit'])->name('wallet.process-deposit');
         Route::get('/wallet/transactions', [WalletController::class, 'transactions'])->name('wallet.transactions');
         Route::get('/wallet/transaction/{id}', [WalletController::class, 'transactionDetails'])->name('wallet.transaction-details');
@@ -108,7 +110,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
     
     // Protected Admin Routes
-    Route::middleware(['auth', 'admin'])->group(function () {
+    Route::middleware(['admin.auth'])->group(function () {
         // Dashboard
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
         
@@ -135,6 +137,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/withdrawals/{id}', [WithdrawalRequestController::class, 'show'])->name('withdrawals.show');
         Route::post('/withdrawals/{id}/process', [WithdrawalRequestController::class, 'process'])->name('withdrawals.process');
         Route::post('/withdrawals/{id}/reject', [WithdrawalRequestController::class, 'reject'])->name('withdrawals.reject');
+        // Bulk withdrawal actions
+Route::post('/withdrawals/bulk-action', [WithdrawalRequestController::class, 'bulkAction'])->name('withdrawals.bulk-action');
+Route::get('/withdrawals/stats', [WithdrawalRequestController::class, 'getStats'])->name('withdrawals.stats');
         
         // Transactions
         Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');

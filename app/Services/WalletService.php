@@ -9,6 +9,8 @@ use App\Models\SystemSetting;
 use App\Models\Notification;
 use App\Models\InvestmentPlan;
 use App\Services\LevelReferralService;
+use App\Mail\DepositConfirmationMail; // ADD THIS
+use Illuminate\Support\Facades\Mail; // ADD THIS
 
 class WalletService
 {
@@ -38,7 +40,7 @@ class WalletService
         $wallet->save();
         
         // Create transaction record
-        Transaction::create([
+       $transaction= Transaction::create([
             'user_id' => $userId,
             'txn_id' => Transaction::generateTxnId(),
             'txn_type' => 'deposit',
@@ -76,8 +78,64 @@ class WalletService
 
         // Update user's total asset hold for level calculation
         LevelService::updateUserAssetHold($user);
+         $levelUpgradeResult = LevelService::checkAndUpgradeLevel($user);
         
+        // SEND DEPOSIT CONFIRMATION EMAIL
+        self::sendDepositConfirmationEmail($user, $amount, $transaction, $levelUpgradeResult, $wallet);
+
         return ['success' => true, 'message' => 'Deposit successful'];
+    }
+private static function sendDepositConfirmationEmail($user, $amount, $transaction, $levelUpgradeResult, $wallet)
+    {
+        try {
+            // Get current level benefits
+            $currentPlan = InvestmentPlan::where('level', $user->current_level)
+                                       ->where('status', 'active')
+                                       ->first();
+            
+            // Get level referral commission rates
+            $commissionRates = \App\Services\LevelReferralService::getCommissionRates($user->current_level);
+            $referralCommission = $commissionRates ? max(
+                $commissionRates->direct_percentage, 
+                $commissionRates->level_b_percentage, 
+                $commissionRates->level_c_percentage
+            ) : 0;
+
+            // Calculate daily earnings
+            $dailyEarnings = $wallet->deposit_balance * ($currentPlan->daily_percentage / 100);
+
+            // Prepare email data
+            $mailData = [
+                'userName' => $user->name,
+                'depositAmount' => $amount,
+                'transactionId' => $transaction->txn_id,
+                'depositDate' => $transaction->created_at->format('F j, Y \a\t g:i A'),
+                'transactionHash' => $transaction->usdt_txn_hash,
+                'levelUpgrade' => $levelUpgradeResult['upgraded'] ?? false,
+                'newLevel' => $levelUpgradeResult['new_level'] ?? null,
+                'dailyPercentage' => $currentPlan->daily_percentage ?? 0,
+                'referralCommission' => $referralCommission,
+                'walletBalance' => $wallet->deposit_balance,
+                'referralBalance' => $wallet->referral_balance,
+                'totalBalance' => $wallet->deposit_balance + $wallet->earning_balance + $wallet->referral_balance,
+                'dailyEarnings' => $dailyEarnings,
+            ];
+
+            // Send email
+            Mail::to($user->email)->send(new DepositConfirmationMail(...array_values($mailData)));
+
+            \Log::info("Deposit confirmation email sent", [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'amount' => $amount
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error("Failed to send deposit confirmation email", [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 
     public static function checkDepositLimitByLevel(User $user, $amount)

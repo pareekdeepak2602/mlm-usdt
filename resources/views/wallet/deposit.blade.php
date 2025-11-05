@@ -69,6 +69,22 @@
                         </div>
                     </div>
 
+                    <!-- Transaction Status Monitor -->
+                    <div id="transactionMonitor" class="alert alert-info d-none">
+                        <div class="d-flex align-items-center">
+                            <div class="spinner-border spinner-border-sm me-3" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <div>
+                                <h6 class="alert-heading mb-1" id="monitorTitle">Verifying Transaction</h6>
+                                <p class="mb-0" id="monitorMessage">Checking blockchain for transaction confirmation...</p>
+                                <div class="progress mt-2" style="height: 6px;">
+                                    <div id="verificationProgress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <form method="POST" action="{{ route('wallet.process-deposit') }}" id="depositForm">
                         @csrf
                         
@@ -84,10 +100,7 @@
                                                name="amount" 
                                                value="{{ old('amount', '100') }}" 
                                                step="0.01" 
-                                               min="{{ $depositLimits['min_deposit'] }}" 
-                                               @if($depositLimits['max_deposit'])
-                                                   max="{{ $depositLimits['max_deposit'] }}"
-                                               @endif
+                                              
                                                placeholder="Enter amount"
                                                required
                                                style="background: var(--bg-primary); border-color: var(--border-color); color: var(--text-primary);">
@@ -118,20 +131,33 @@
 
                         <div class="mb-3">
                             <label for="txn_hash" class="form-label" style="color: var(--text-primary);">BSC Transaction Hash (BEP20)</label>
-                            <input type="text" 
-                                   class="form-control @error('txn_hash') is-invalid @enderror" 
-                                   id="txn_hash" 
-                                   name="txn_hash" 
-                                   value="{{ old('txn_hash', '0x8f3e2c1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2') }}" 
-                                   placeholder="Enter your BSC transaction hash (0x...)"
-                                   required
-                                   style="background: var(--bg-primary); border-color: var(--border-color); color: var(--text-primary);">
+                            <div class="input-group">
+                                <input type="text" 
+                                       class="form-control @error('txn_hash') is-invalid @enderror" 
+                                       id="txn_hash" 
+                                       name="txn_hash" 
+                                       value="{{ old('txn_hash', '') }}" 
+                                       placeholder="Enter your BSC transaction hash (0x...)"
+                                       required
+                                       style="background: var(--bg-primary); border-color: var(--border-color); color: var(--text-primary);">
+                                <button type="button" class="btn btn-outline-secondary" id="verifyTxnBtn" onclick="verifyTransactionHash()">
+                                    <i class="fas fa-search me-1"></i> Verify
+                                </button>
+                            </div>
                             @error('txn_hash')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                             <small class="form-text" style="color: var(--text-secondary);">
                                 Copy the transaction hash from your wallet after making the BEP20 transfer. Format: 0x followed by 64 hexadecimal characters.
                             </small>
+                            
+                            <!-- Verification Result -->
+                            <div id="verificationResult" class="mt-2 d-none">
+                                <div class="alert d-flex align-items-center" id="verificationAlert">
+                                    <i class="fas me-2" id="verificationIcon"></i>
+                                    <span id="verificationText"></span>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="alert alert-warning" style="background: rgba(255, 193, 7, 0.1); border-color: rgba(255, 193, 7, 0.2); color: var(--text-primary);">
@@ -154,6 +180,57 @@
                     </form>
                 </div>
             </div>
+
+            <!-- Transaction Steps -->
+            <div class="card shadow mb-4" style="background: var(--card-bg); border-color: var(--card-border);">
+                <div class="card-header py-3" style="background: var(--bg-secondary); border-color: var(--border-color);">
+                    <h6 class="m-0 font-weight-bold text-primary">How to Deposit</h6>
+                </div>
+                <div class="card-body">
+                    <div class="step mb-4">
+                        <div class="step-number" style="background: var(--bs-primary);">1</div>
+                        <div class="step-content">
+                            <h6 style="color: var(--text-primary);">Send USDT to Our Wallet</h6>
+                            <p class="mb-2" style="color: var(--text-secondary);">Transfer USDT (BEP20) to the wallet address shown on the right.</p>
+                            <div class="network-details">
+                                <div class="detail-item">
+                                    <small><strong>Network:</strong> Binance Smart Chain (BEP20)</small>
+                                </div>
+                                <div class="detail-item">
+                                    <small><strong>Token:</strong> USDT (BEP20)</small>
+                                </div>
+                                <div class="detail-item">
+                                    <small><strong>Minimum:</strong> ${{ number_format($depositLimits['min_deposit'], 2) }} USDT</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="step mb-4">
+                        <div class="step-number" style="background: var(--bs-warning);">2</div>
+                        <div class="step-content">
+                            <h6 style="color: var(--text-primary);">Wait for Confirmation</h6>
+                            <p class="mb-2" style="color: var(--text-secondary);">Wait for the transaction to be confirmed on the blockchain (usually 2-3 minutes).</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step mb-4">
+                        <div class="step-number" style="background: var(--bs-info);">3</div>
+                        <div class="step-content">
+                            <h6 style="color: var(--text-primary);">Copy Transaction Hash</h6>
+                            <p class="mb-2" style="color: var(--text-secondary);">Copy the Transaction Hash (TXID) from your wallet after the transfer is completed.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number" style="background: var(--bs-success);">4</div>
+                        <div class="step-content">
+                            <h6 style="color: var(--text-primary);">Submit for Verification</h6>
+                            <p class="mb-0" style="color: var(--text-secondary);">Paste the transaction hash in the form above and click "Submit Deposit Request".</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Deposit Information -->
@@ -168,7 +245,7 @@
                 <div class="card-body">
                     <div class="text-center mb-3">
                         <div class="p-3 rounded border" style="background: var(--bg-secondary); border-color: var(--border-color) !important;">
-                            <code class="small" id="walletAddress" style="color: var(--text-primary); word-break: break-all;">0x742E4D6c4C8B6C4D8E6F7C5A3B2C1D0E9F8A7B6C</code>
+                            <code class="small" id="walletAddress" style="color: var(--text-primary); word-break: break-all;">{{ config('services.transaction_verifier.company_wallet', '0x5CE2C945eeD9FBA974363fF028D86ed641b7b185') }}</code>
                             <button class="btn btn-sm btn-outline-warning ms-2" onclick="copyWalletAddress()" type="button">
                                 <i class="fas fa-copy"></i>
                             </button>
@@ -187,6 +264,51 @@
                 </div>
             </div>
 
+            <!-- Recent Deposits -->
+            <div class="card shadow mb-4" style="background: var(--card-bg); border-color: var(--card-border);">
+                <div class="card-header py-3" style="background: var(--bg-secondary); border-color: var(--border-color);">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-clock me-2"></i>Recent Deposits
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @php
+                        $recentDeposits = Auth::user()->transactions()
+                            ->where('txn_type', 'deposit')
+                            ->orderBy('created_at', 'desc')
+                            ->limit(5)
+                            ->get();
+                    @endphp
+                    
+                    @if($recentDeposits->count() > 0)
+                        <div class="list-group list-group-flush">
+                            @foreach($recentDeposits as $deposit)
+                                <div class="list-group-item px-0" style="background: transparent; border-color: var(--border-color);">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1" style="color: var(--text-primary);">${{ number_format($deposit->amount, 2) }}</h6>
+                                            <small style="color: var(--text-secondary);">{{ $deposit->created_at->diffForHumans() }}</small>
+                                        </div>
+                                        <span class="badge 
+                                            @if($deposit->status == 'completed') bg-success
+                                            @elseif($deposit->status == 'pending') bg-warning
+                                            @elseif($deposit->status == 'failed') bg-danger
+                                            @else bg-secondary @endif">
+                                            {{ ucfirst($deposit->status) }}
+                                        </span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-center mb-0" style="color: var(--text-secondary);">
+                            <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                            No recent deposits
+                        </p>
+                    @endif
+                </div>
+            </div>
+
             <!-- Support Card -->
             <div class="card shadow" style="background: var(--card-bg); border-color: var(--card-border);">
                 <div class="card-header py-3" style="background: var(--bg-secondary); border-color: var(--border-color);">
@@ -200,6 +322,31 @@
                         <i class="fas fa-envelope me-2"></i> Contact Support
                     </a>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Verification Modal -->
+<div class="modal fade" id="verificationModal" tabindex="-1" aria-labelledby="verificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: var(--card-bg); border-color: var(--card-border);">
+            <div class="modal-header" style="background: var(--bg-secondary); border-color: var(--border-color);">
+                <h5 class="modal-title" id="verificationModalLabel" style="color: var(--text-primary);">
+                    <i class="fas fa-search me-2"></i>Verifying Transaction
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(1);"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h6 style="color: var(--text-primary);" id="modalTitle">Checking Blockchain</h6>
+                <p class="mb-3" style="color: var(--text-secondary);" id="modalMessage">Searching for transaction on Binance Smart Chain...</p>
+                <div class="progress mb-3">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                </div>
+                <small class="text-muted" id="modalDetails">This may take a few seconds</small>
             </div>
         </div>
     </div>
@@ -312,6 +459,37 @@
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
+
+/* Verification result styles */
+.verification-success {
+    background: rgba(var(--bs-success-rgb), 0.1) !important;
+    border-color: rgba(var(--bs-success-rgb), 0.2) !important;
+    color: var(--bs-success) !important;
+}
+
+.verification-error {
+    background: rgba(var(--bs-danger-rgb), 0.1) !important;
+    border-color: rgba(var(--bs-danger-rgb), 0.2) !important;
+    color: var(--bs-danger) !important;
+}
+
+.verification-warning {
+    background: rgba(var(--bs-warning-rgb), 0.1) !important;
+    border-color: rgba(var(--bs-warning-rgb), 0.2) !important;
+    color: var(--bs-warning) !important;
+}
+
+.verification-info {
+    background: rgba(var(--bs-info-rgb), 0.1) !important;
+    border-color: rgba(var(--bs-info-rgb), 0.2) !important;
+    color: var(--bs-info) !important;
+}
+
+/* List group customization */
+.list-group-item {
+    background: var(--bg-primary) !important;
+    border-color: var(--border-color) !important;
+}
 </style>
 @endpush
 
@@ -334,6 +512,186 @@ function copyWalletAddress() {
     });
 }
 
+function verifyTransactionHash() {
+    const txnHash = document.getElementById('txn_hash').value.trim();
+    const amount = document.getElementById('amount').value;
+    const verifyBtn = document.getElementById('verifyTxnBtn');
+    
+    if (!txnHash) {
+        showVerificationResult('error', 'Please enter a transaction hash first');
+        return;
+    }
+
+    // Validate transaction hash format
+    // if (!/^0x[a-fA-F0-9]{64}$/.test(txnHash)) {
+    //     showVerificationResult('error', 'Invalid transaction hash format. Must be 0x followed by 64 hexadecimal characters.');
+    //     return;
+    // }
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('verificationModal'));
+    modal.show();
+
+    // Update modal content
+    document.getElementById('modalTitle').textContent = 'Checking Blockchain';
+    document.getElementById('modalMessage').textContent = 'Searching for transaction on Binance Smart Chain...';
+    document.getElementById('modalDetails').textContent = 'This may take a few seconds';
+
+    // Disable verify button
+    verifyBtn.disabled = true;
+    verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Verifying...';
+
+    // Make API call to verify transaction
+    fetch('{{ route("wallet.realtime-status") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            txn_hash: txnHash,
+            amount: amount
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        modal.hide();
+        verifyBtn.disabled = false;
+        verifyBtn.innerHTML = '<i class="fas fa-search me-1"></i> Verify';
+
+        if (data.success) {
+            if (data.status === 'success') {
+                showVerificationResult('success', 
+                    `Transaction verified successfully! Block: ${data.data?.blockNumber || 'N/A'}`);
+            } else if (data.status === 'not_found') {
+                showVerificationResult('warning', 
+                    'Transaction not found on blockchain. It may still be pending.');
+            } else if (data.status === 'failed') {
+                showVerificationResult('error', 
+                    'Transaction failed on blockchain. Please check your wallet.');
+            } else if (data.status === 'mismatch') {
+                showVerificationResult('warning', 
+                    'Transaction details do not match. Please verify amount and recipient.');
+            } else {
+                showVerificationResult('error', 
+                    data.message || 'Transaction verification failed');
+            }
+        } else {
+            showVerificationResult('error', 
+                data.message || 'Failed to verify transaction');
+        }
+    })
+    .catch(error => {
+        modal.hide();
+        verifyBtn.disabled = false;
+        verifyBtn.innerHTML = '<i class="fas fa-search me-1"></i> Verify';
+        
+        console.error('Error:', error);
+        showVerificationResult('error', 
+            'Network error. Please try again later.');
+    });
+}
+
+function showVerificationResult(type, message) {
+    const resultDiv = document.getElementById('verificationResult');
+    const alertDiv = document.getElementById('verificationAlert');
+    const icon = document.getElementById('verificationIcon');
+    const text = document.getElementById('verificationText');
+
+    // Reset classes
+    alertDiv.className = 'alert d-flex align-items-center';
+    resultDiv.classList.remove('d-none');
+
+    switch (type) {
+        case 'success':
+            alertDiv.classList.add('verification-success');
+            icon.className = 'fas fa-check-circle me-2';
+            break;
+        case 'error':
+            alertDiv.classList.add('verification-error');
+            icon.className = 'fas fa-times-circle me-2';
+            break;
+        case 'warning':
+            alertDiv.classList.add('verification-warning');
+            icon.className = 'fas fa-exclamation-triangle me-2';
+            break;
+        case 'info':
+            alertDiv.classList.add('verification-info');
+            icon.className = 'fas fa-info-circle me-2';
+            break;
+    }
+
+    text.textContent = message;
+
+    // Auto-hide success messages after 10 seconds
+    if (type === 'success') {
+        setTimeout(() => {
+            resultDiv.classList.add('d-none');
+        }, 10000);
+    }
+}
+
+function startTransactionMonitoring(txnHash) {
+    const monitor = document.getElementById('transactionMonitor');
+    const title = document.getElementById('monitorTitle');
+    const message = document.getElementById('monitorMessage');
+    const progress = document.getElementById('verificationProgress');
+
+    monitor.classList.remove('d-none');
+    let progressValue = 0;
+
+    const interval = setInterval(() => {
+        progressValue += 10;
+        if (progressValue > 90) progressValue = 90;
+        progress.style.width = progressValue + '%';
+
+        fetch('{{ route("wallet.realtime-status") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ txn_hash: txnHash })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.status === 'success') {
+                clearInterval(interval);
+                progress.style.width = '100%';
+                title.textContent = 'Transaction Verified!';
+                message.textContent = 'Your deposit has been confirmed on the blockchain.';
+                monitor.classList.remove('alert-info');
+                monitor.classList.add('alert-success');
+                
+                // Refresh page after 3 seconds to show updated balance
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+            } else if (data.success && (data.status === 'failed' || data.status === 'mismatch')) {
+                clearInterval(interval);
+                title.textContent = 'Verification Failed';
+                message.textContent = data.message || 'Transaction verification failed.';
+                monitor.classList.remove('alert-info');
+                monitor.classList.add('alert-danger');
+            }
+        })
+        .catch(error => {
+            console.error('Monitoring error:', error);
+        });
+    }, 3000);
+
+    // Stop monitoring after 5 minutes
+    setTimeout(() => {
+        clearInterval(interval);
+        if (monitor.classList.contains('alert-info')) {
+            title.textContent = 'Monitoring Timeout';
+            message.textContent = 'Transaction verification is taking longer than expected. Please check back later.';
+            monitor.classList.remove('alert-info');
+            monitor.classList.add('alert-warning');
+        }
+    }, 300000);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const amountInput = document.getElementById('amount');
     const txnHashInput = document.getElementById('txn_hash');
@@ -341,10 +699,58 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('submitBtn');
     
     // Form submission loading state
-    depositForm.addEventListener('submit', function() {
+    depositForm.addEventListener('submit', function(e) {
+        const txnHash = txnHashInput.value.trim();
+        if (!txnHash) {
+            e.preventDefault();
+            showVerificationResult('error', 'Please enter a transaction hash');
+            return;
+        }
+
         submitBtn.disabled = true;
         submitBtn.classList.add('btn-loading');
         submitBtn.innerHTML = 'Processing...';
+
+        // Start monitoring if we have a transaction hash
+        if (txnHash) {
+            startTransactionMonitoring(txnHash);
+        }
+    });
+
+    // Auto-check status when page loads if there's a transaction hash in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const txnHash = urlParams.get('txn_hash');
+    if (txnHash) {
+        txnHashInput.value = txnHash;
+        startTransactionMonitoring(txnHash);
+    }
+
+    // Real-time transaction hash validation
+    txnHashInput.addEventListener('input', function() {
+        const hash = this.value.trim();
+        if (hash.length > 0) {
+            // Basic format validation
+            // if (!/^0x[a-fA-F0-9]{64}$/.test(hash)) {
+            //     this.classList.add('is-invalid');
+            // } else {
+            //     this.classList.remove('is-invalid');
+            // }
+        }
+    });
+
+    // Amount validation
+    amountInput.addEventListener('input', function() {
+        const amount = parseFloat(this.value);
+        const minAmount = parseFloat(this.getAttribute('min'));
+        const maxAmount = this.getAttribute('max') ? parseFloat(this.getAttribute('max')) : null;
+
+        if (amount < minAmount) {
+            this.classList.add('is-invalid');
+        } else if (maxAmount && amount > maxAmount) {
+            this.classList.add('is-invalid');
+        } else {
+            this.classList.remove('is-invalid');
+        }
     });
 });
 </script>

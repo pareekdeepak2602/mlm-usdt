@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\InvestmentPlan;
 use App\Models\Notification;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class LevelService
 {
@@ -55,7 +56,7 @@ class LevelService
             return false;
         }
         
-        // Check asset hold requirement
+        // Check asset hold requirement - NOW BASED ON DEPOSIT BALANCE
         if ($user->total_asset_hold < $plan->asset_hold) {
             return false;
         }
@@ -95,9 +96,8 @@ class LevelService
     
     public static function updateUserAssetHold(User $user)
     {
-        $totalAssetHold = $user->investments()
-                              ->where('status', 'active')
-                              ->sum('amount');
+        // FIXED: Asset hold is now based on deposit balance only
+        $totalAssetHold = $user->wallet ? $user->wallet->deposit_balance : 0;
         
         $user->total_asset_hold = $totalAssetHold;
         $user->save();
@@ -146,12 +146,13 @@ class LevelService
         // Here you can also send email notification
         // Mail::to($user->email)->send(new LevelUpMail($user, $newLevel));
     }
-     public static function checkAndUpgradeLevel($user)
+    
+    public static function checkAndUpgradeLevel($user)
     {
         $currentLevel = $user->current_level;
         $assetHold = $user->wallet ? $user->wallet->deposit_balance : 0;
         
-        // Get the highest level the user qualifies for
+        // Get the highest level the user qualifies for based on asset hold
         $qualifiedPlan = InvestmentPlan::where('asset_hold', '<=', $assetHold)
                                     ->where('status', 'active')
                                     ->orderBy('level', 'desc')
@@ -170,6 +171,9 @@ class LevelService
         $oldLevel = $user->current_level;
         $user->current_level = $qualifiedPlan->level;
         $user->save();
+
+        // Send notification
+        self::sendLevelUpNotification($user, $qualifiedPlan->level);
 
         Log::info("User level upgraded", [
             'user_id' => $user->id,
@@ -258,7 +262,8 @@ class LevelService
             return ['max_level_reached' => true];
         }
 
-        $assetProgress = min(100, ($requirements['current_asset_hold'] / $requirements['asset_hold_required']) * 100);
+        $assetProgress = $requirements['asset_hold_required'] > 0 ? 
+            min(100, ($requirements['current_asset_hold'] / $requirements['asset_hold_required']) * 100) : 100;
         
         $directProgress = $requirements['direct_referrals_required'] ? 
             min(100, ($requirements['current_direct_referrals'] / $requirements['direct_referrals_required']) * 100) : 100;
@@ -273,6 +278,38 @@ class LevelService
             'direct_referrals_progress' => $directProgress,
             'indirect_referrals_progress' => $indirectProgress,
             'requirements' => $requirements
+        ];
+    }
+
+    /**
+     * Get user's current level benefits
+     */
+    public static function getCurrentLevelBenefits($userId)
+    {
+        $user = User::with(['wallet'])->find($userId);
+        if (!$user) {
+            return null;
+        }
+
+        $currentPlan = InvestmentPlan::where('level', $user->current_level)
+                                   ->where('status', 'active')
+                                   ->first();
+
+        if (!$currentPlan) {
+            return null;
+        }
+
+        $depositBalance = $user->wallet ? $user->wallet->deposit_balance : 0;
+        $dailyEarnings = $depositBalance * ($currentPlan->daily_percentage / 100);
+
+        return [
+            'current_level' => $user->current_level,
+            'plan_name' => $currentPlan->name,
+            'daily_percentage' => $currentPlan->daily_percentage,
+            'deposit_balance' => $depositBalance,
+            'daily_earnings' => $dailyEarnings,
+            'annual_earnings' => $dailyEarnings * 365,
+            'asset_hold_required' => $currentPlan->asset_hold
         ];
     }
 }
