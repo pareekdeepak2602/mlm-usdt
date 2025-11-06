@@ -247,6 +247,16 @@
                 </div>
                 <div class="card-body">
                     <div class="text-center mb-3">
+            <div class="qr-code-container mb-3 p-3 rounded border" style="background: var(--bg-secondary); border-color: var(--border-color) !important;">
+                <!-- QR Code Image -->
+                <img src="https://i.ibb.co/k6J9L2qT/IMG-20251106-WA0002.jpg" 
+                     alt="USDT BEP20 Wallet QR Code" 
+                     class="img-fluid" 
+                     style="max-width: 200px;">
+                <p class="small mt-2 mb-0" style="color: var(--text-secondary);">Scan to Deposit</p>
+            </div>
+        </div>
+                    <div class="text-center mb-3">
                         <div class="p-3 rounded border" style="background: var(--bg-secondary); border-color: var(--border-color) !important;">
                             <code class="small" id="walletAddress" style="color: var(--text-primary); word-break: break-all;">{{ config('services.transaction_verifier.company_wallet', '0x742E4D6c4C8B6C4D8E6F7C5A3B2C1D0E9F8A7B6C') }}</code>
                             <button class="btn btn-sm btn-outline-warning ms-2" onclick="copyWalletAddress()" type="button">
