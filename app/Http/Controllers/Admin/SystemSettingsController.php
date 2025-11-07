@@ -15,7 +15,7 @@ class SystemSettingsController extends Controller
         return view('admin.settings.index', compact('settings'));
     }
 
-  public function update(Request $request)
+    public function update(Request $request)
 {
     $validated = $request->validate([
         'minimum_withdrawal' => 'required|numeric|min:0',
@@ -37,7 +37,7 @@ class SystemSettingsController extends Controller
             'qr_code_image' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // Keep the same upload directory - public/storage/qr-codes
+        // Upload directory - public/storage/qr-codes (this is correct)
         $uploadPath = public_path('storage/qr-codes');
         if (!File::exists($uploadPath)) {
             File::makeDirectory($uploadPath, 0775, true);
@@ -53,19 +53,20 @@ class SystemSettingsController extends Controller
             }
         }
 
-        // Store new file in public/storage/qr-codes (keep as is)
+        // Store new file in public/storage/qr-codes
         $file = $request->file('qr_code_image');
         $filename = time() . '_' . $file->getClientOriginalName();
         $file->move($uploadPath, $filename);
 
-        // Save only the filename in database, not the full URL
-        $qrCodeValue = $filename;
+        // Create correct URL - just the filename for database
+        // We'll reconstruct the full URL when needed, or store relative path
+        $qrCodePath = 'storage/qr-codes/' . $filename;
 
         // Update or create database record
         SystemSetting::updateOrCreate(
             ['setting_key' => 'qr_code_image'],
             [
-                'setting_value' => $qrCodeValue, // Save only filename
+                'setting_value' => $qrCodePath, // Store relative path
                 'description' => 'QR Code for USDT BEP20 Wallet',
             ]
         );
@@ -84,9 +85,7 @@ class SystemSettingsController extends Controller
     }
 
     return back()->with('success', 'Settings updated successfully.');
-}
-
-    public function removeQrCode()
+}    public function removeQrCode()
     {
         $qrCodeSetting = SystemSetting::where('setting_key', 'qr_code_image')->first();
 
