@@ -38,7 +38,7 @@ class SystemSettingsController extends Controller
             ]);
 
             // Prepare upload directory
-            $uploadPath = public_path('storage/qr-codes');
+            $uploadPath = public_path('public/storage/qr-codes');
             if (!File::exists($uploadPath)) {
                 File::makeDirectory($uploadPath, 0775, true);
             }
@@ -46,7 +46,7 @@ class SystemSettingsController extends Controller
             // Delete old QR code if it exists
             $oldQrCode = SystemSetting::where('setting_key', 'qr_code_image')->first();
             if ($oldQrCode && $oldQrCode->setting_value) {
-                $oldFile = public_path('storage/qr-codes/' . basename($oldQrCode->setting_value));
+                $oldFile = public_path('public/storage/qr-codes/' . basename($oldQrCode->setting_value));
                 if (File::exists($oldFile)) {
                     File::delete($oldFile);
                 }
@@ -58,7 +58,7 @@ class SystemSettingsController extends Controller
             $file->move($uploadPath, $filename);
 
             // Create public URL
-            $qrCodeUrl = asset('storage/qr-codes/' . $filename);
+            $qrCodeUrl = asset('public/storage/qr-codes/' . $filename);
 
             // Update or create database record
             SystemSetting::updateOrCreate(
@@ -90,7 +90,7 @@ class SystemSettingsController extends Controller
         $qrCodeSetting = SystemSetting::where('setting_key', 'qr_code_image')->first();
 
         if ($qrCodeSetting && $qrCodeSetting->setting_value) {
-            $filePath = public_path('storage/qr-codes/' . basename($qrCodeSetting->setting_value));
+            $filePath = public_path('public/storage/qr-codes/' . basename($qrCodeSetting->setting_value));
             if (File::exists($filePath)) {
                 File::delete($filePath);
             }
