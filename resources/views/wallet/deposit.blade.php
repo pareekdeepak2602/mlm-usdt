@@ -238,44 +238,53 @@
 
         <!-- Deposit Information -->
         <div class="col-lg-4">
-            <!-- BEP20 Wallet Address -->
-            <div class="card shadow mb-4" style="background: var(--card-bg); border-color: var(--card-border);">
-                <div class="card-header py-3" style="background: var(--bs-warning); border-color: var(--border-color);">
-                    <h6 class="m-0 font-weight-bold text-dark">
-                        <i class="fab fa-bootstrap me-2"></i>Our USDT BEP20 Wallet Address
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="text-center mb-3">
+           <!-- BEP20 Wallet Address -->
+<div class="card shadow mb-4" style="background: var(--card-bg); border-color: var(--card-border);">
+    <div class="card-header py-3" style="background: var(--bs-warning); border-color: var(--border-color);">
+        <h6 class="m-0 font-weight-bold text-dark">
+            <i class="fab fa-bootstrap me-2"></i>Our USDT BEP20 Wallet Address
+        </h6>
+    </div>
+    <div class="card-body">
+        @if($qrCode)
+        <div class="text-center mb-3">
             <div class="qr-code-container mb-3 p-3 rounded border" style="background: var(--bg-secondary); border-color: var(--border-color) !important;">
-                <!-- QR Code Image -->
-                <img src="https://i.ibb.co/k6J9L2qT/IMG-20251106-WA0002.jpg" 
+                <!-- Dynamic QR Code Image -->
+                <img src="{{ $qrCode }}" 
                      alt="USDT BEP20 Wallet QR Code" 
                      class="img-fluid" 
                      style="max-width: 200px;">
                 <p class="small mt-2 mb-0" style="color: var(--text-secondary);">Scan to Deposit</p>
             </div>
         </div>
-                    <div class="text-center mb-3">
-                        <div class="p-3 rounded border" style="background: var(--bg-secondary); border-color: var(--border-color) !important;">
-                            <code class="small" id="walletAddress" style="color: var(--text-primary); word-break: break-all;">{{ config('services.transaction_verifier.company_wallet', '0x742E4D6c4C8B6C4D8E6F7C5A3B2C1D0E9F8A7B6C') }}</code>
-                            <button class="btn btn-sm btn-outline-warning ms-2" onclick="copyWalletAddress()" type="button">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="network-info">
-                        <div class="d-flex align-items-center justify-content-center mb-2">
-                            <span class="badge bg-warning text-dark me-2">BEP20</span>
-                            <small style="color: var(--text-secondary);">Binance Smart Chain</small>
-                        </div>
-                        <p class="small text-center mb-0" style="color: var(--text-secondary);">
-                            <i class="fas fa-exclamation-circle me-1"></i>
-                            Send <strong>USDT BEP20</strong> only to this address
-                        </p>
-                    </div>
-                </div>
+        @endif
+        
+        <div class="text-center mb-3">
+            <div class="p-3 rounded border" style="background: var(--bg-secondary); border-color: var(--border-color) !important;">
+                <!-- Dynamic Wallet Address -->
+                <code class="small" id="walletAddress" style="color: var(--text-primary); word-break: break-all;">
+                    {{ $usdtWallet ?? 'Wallet address not configured' }}
+                </code>
+                @if($usdtWallet)
+                <button class="btn btn-sm btn-outline-warning ms-2" onclick="copyWalletAddress()" type="button">
+                    <i class="fas fa-copy"></i>
+                </button>
+                @endif
             </div>
+        </div>
+        
+        <div class="network-info">
+            <div class="d-flex align-items-center justify-content-center mb-2">
+                <span class="badge bg-warning text-dark me-2">BEP20</span>
+                <small style="color: var(--text-secondary);">Binance Smart Chain</small>
+            </div>
+            <p class="small text-center mb-0" style="color: var(--text-secondary);">
+                <i class="fas fa-exclamation-circle me-1"></i>
+                Send <strong>USDT BEP20</strong> only to this address
+            </p>
+        </div>
+    </div>
+</div>
 
             <!-- Recent Deposits -->
             <div class="card shadow mb-4" style="background: var(--card-bg); border-color: var(--card-border);">

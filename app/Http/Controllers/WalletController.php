@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Wallet;
 use App\Models\Transaction;
+use App\Models\SystemSetting;
 use App\Services\WalletService;
 use App\Services\LevelService;
 use App\Services\TransactionVerificationService;
@@ -29,13 +30,17 @@ class WalletController extends Controller
         return view('wallet.index', compact('wallet', 'balance', 'transactions'));
     }
     
-    public function deposit()
-    {
-        $user = Auth::user();
-        $balance = WalletService::getBalance($user->id);
-        
-        return view('wallet.deposit', compact('balance'));
-    }
+   public function deposit()
+{
+    $user = Auth::user();
+    $balance = WalletService::getBalance($user->id);
+    
+    // Fetch dynamic wallet settings
+    $usdtWallet = SystemSetting::getUsdtWallet();
+    $qrCode = SystemSetting::getQrCode();
+    
+    return view('wallet.deposit', compact('balance', 'usdtWallet', 'qrCode'));
+}
     
     public function processDeposit(Request $request)
     {

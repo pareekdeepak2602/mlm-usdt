@@ -160,7 +160,7 @@ Route::get('/withdrawals/stats', [WithdrawalRequestController::class, 'getStats'
         // System Settings
         Route::get('/settings', [SystemSettingsController::class, 'index'])->name('settings.index');
         Route::post('/settings', [SystemSettingsController::class, 'update'])->name('settings.update');
-        
+         Route::delete('/settings/remove-qr-code', [SystemSettingsController::class, 'removeQrCode'])->name('settings.remove-qr-code');
         // Reports
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/users', [ReportController::class, 'usersReport'])->name('reports.users');
