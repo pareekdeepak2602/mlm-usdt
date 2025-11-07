@@ -15,9 +15,7 @@ class SystemSettingsController extends Controller
         return view('admin.settings.index', compact('settings'));
     }
 
- 
-
-public function update(Request $request)
+  public function update(Request $request)
 {
     $validated = $request->validate([
         'minimum_withdrawal' => 'required|numeric|min:0',
@@ -39,9 +37,8 @@ public function update(Request $request)
             'qr_code_image' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // ✅ Correct upload path: public/storage/qr-codes (no extra "public/")
+        // Keep the same upload directory - public/storage/qr-codes
         $uploadPath = public_path('storage/qr-codes');
-
         if (!File::exists($uploadPath)) {
             File::makeDirectory($uploadPath, 0775, true);
         }
@@ -49,25 +46,26 @@ public function update(Request $request)
         // Delete old QR code if it exists
         $oldQrCode = SystemSetting::where('setting_key', 'qr_code_image')->first();
         if ($oldQrCode && $oldQrCode->setting_value) {
-            $oldFile = public_path('storage/qr-codes/' . basename($oldQrCode->setting_value));
+            $oldFilename = basename($oldQrCode->setting_value);
+            $oldFile = public_path('storage/qr-codes/' . $oldFilename);
             if (File::exists($oldFile)) {
                 File::delete($oldFile);
             }
         }
 
-        // Store new file directly in /public/storage/qr-codes
+        // Store new file in public/storage/qr-codes (keep as is)
         $file = $request->file('qr_code_image');
         $filename = time() . '_' . $file->getClientOriginalName();
         $file->move($uploadPath, $filename);
 
-        // ✅ Correct public URL (no "public/" in URL)
-        $qrCodeUrl = asset('storage/qr-codes/' . $filename);
+        // Save only the filename in database, not the full URL
+        $qrCodeValue = $filename;
 
         // Update or create database record
         SystemSetting::updateOrCreate(
             ['setting_key' => 'qr_code_image'],
             [
-                'setting_value' => $qrCodeUrl,
+                'setting_value' => $qrCodeValue, // Save only filename
                 'description' => 'QR Code for USDT BEP20 Wallet',
             ]
         );
@@ -87,7 +85,6 @@ public function update(Request $request)
 
     return back()->with('success', 'Settings updated successfully.');
 }
-
 
     public function removeQrCode()
     {
