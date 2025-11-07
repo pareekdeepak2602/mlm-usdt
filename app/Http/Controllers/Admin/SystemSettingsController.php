@@ -15,6 +15,7 @@ class SystemSettingsController extends Controller
         return view('admin.settings.index', compact('settings'));
     }
 
+ 
 
 public function update(Request $request)
 {
