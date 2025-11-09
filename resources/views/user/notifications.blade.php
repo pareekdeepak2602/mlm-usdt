@@ -166,9 +166,10 @@
                             <div class="text-muted">
                                 Showing {{ $notifications->firstItem() }} to {{ $notifications->lastItem() }} of {{ $notifications->total() }} notifications
                             </div>
-                            <div>
-                                {{ $notifications->links() }}
-                            </div>
+                          <div>
+    {{ $notifications->links('pagination::bootstrap-4') }}
+</div>
+
                         </div>
                     @else
                         <div class="text-center py-5">

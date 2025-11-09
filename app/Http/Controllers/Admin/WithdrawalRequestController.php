@@ -4,17 +4,18 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\WithdrawalRequest;
-use App\Models\Transaction;
-use App\Models\Wallet;
-use App\Models\User;
-use App\Models\Notification;
+use App\Services\WithdrawalProcessingService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\WithdrawalApprovedMail;
-use App\Mail\WithdrawalRejectedMail;
 
 class WithdrawalRequestController extends Controller
 {
+    private $withdrawalService;
+
+    public function __construct(WithdrawalProcessingService $withdrawalService)
+    {
+        $this->withdrawalService = $withdrawalService;
+    }
+
     public function index(Request $request)
     {
         $query = WithdrawalRequest::with('user');
@@ -50,10 +51,14 @@ class WithdrawalRequestController extends Controller
         $totalProcessing = WithdrawalRequest::where('status', 'processing')->count();
         $totalCompleted = WithdrawalRequest::where('status', 'completed')->count();
         $totalRejected = WithdrawalRequest::where('status', 'rejected')->count();
+        $totalFailed = WithdrawalRequest::where('status', 'failed')->count();
         
         $totalPendingAmount = WithdrawalRequest::where('status', 'pending')->sum('net_amount');
         $totalProcessingAmount = WithdrawalRequest::where('status', 'processing')->sum('net_amount');
         
+        // Check blockchain status
+        $blockchainAvailable = $this->withdrawalService->isBlockchainAvailable();
+
         return view('admin.withdrawals.index', compact(
             'withdrawals', 
             'filters',
@@ -61,8 +66,10 @@ class WithdrawalRequestController extends Controller
             'totalProcessing',
             'totalCompleted',
             'totalRejected',
+            'totalFailed',
             'totalPendingAmount',
-            'totalProcessingAmount'
+            'totalProcessingAmount',
+            'blockchainAvailable'
         ));
     }
 
@@ -88,49 +95,27 @@ class WithdrawalRequestController extends Controller
             return back()->with('error', 'Withdrawal request has already been processed.');
         }
 
-        \DB::transaction(function () use ($withdrawal, $request) {
-            // Update withdrawal status
-            $withdrawal->update([
-                'status' => 'completed',
-                'processed_at' => now(),
-                'admin_note' => $request->admin_note ?? 'Withdrawal processed successfully.',
-            ]);
+        // Check blockchain service availability
+        if (!$this->withdrawalService->isBlockchainAvailable()) {
+            return back()->with('error', 'Blockchain service is currently unavailable. Please try again later.');
+        }
 
-            // Create transaction record
-            Transaction::create([
-                'user_id' => $withdrawal->user_id,
-                'txn_id' => 'TXN' . strtoupper(uniqid()),
-                'txn_type' => 'withdraw',
-                'amount' => -$withdrawal->amount, // Negative amount for withdrawal
-                'status' => 'completed',
-                'details' => 'Withdrawal processed - Net: ' . $withdrawal->net_amount . ' USDT',
-            ]);
+        try {
+            $result = $this->withdrawalService->processWithdrawal(
+                $withdrawal, 
+                $request->admin_note ?? 'Withdrawal processed successfully.'
+            );
 
-            // Update user's wallet
-            $wallet = Wallet::where('user_id', $withdrawal->user_id)->first();
-            if ($wallet) {
-                $wallet->decrement('earning_balance', $withdrawal->amount);
-                $wallet->increment('total_withdrawn', $withdrawal->amount);
+            $message = 'Withdrawal processed successfully and user notified.';
+            if ($result['txHash']) {
+                $message .= ' Transaction Hash: ' . $result['txHash'];
             }
 
-            // Create notification for user
-            Notification::create([
-                'user_id' => $withdrawal->user_id,
-                'title' => 'Withdrawal Approved',
-                'message' => 'Your withdrawal request of ' . $withdrawal->net_amount . ' USDT has been approved and processed.',
-                'type' => 'success'
-            ]);
+            return back()->with('success', $message);
 
-            // Send approval email (queued)
-            try {
-                Mail::to($withdrawal->user->email)
-                    ->queue(new WithdrawalApprovedMail($withdrawal));
-            } catch (\Exception $e) {
-                \Log::error('Failed to send withdrawal approval email: ' . $e->getMessage());
-            }
-        });
-
-        return back()->with('success', 'Withdrawal processed successfully and user notified.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Withdrawal processing failed: ' . $e->getMessage());
+        }
     }
 
     public function reject(Request $request, $id)
@@ -145,37 +130,12 @@ class WithdrawalRequestController extends Controller
             return back()->with('error', 'Withdrawal request has already been processed.');
         }
 
-        \DB::transaction(function () use ($withdrawal, $request) {
-            $withdrawal->update([
-                'status' => 'rejected',
-                'admin_note' => $request->admin_note,
-                'processed_at' => now(),
-            ]);
-
-            // Return funds to user's wallet
-            $wallet = Wallet::where('user_id', $withdrawal->user_id)->first();
-            if ($wallet) {
-                $wallet->increment('earning_balance', $withdrawal->amount);
-            }
-
-            // Create notification for user
-            Notification::create([
-                'user_id' => $withdrawal->user_id,
-                'title' => 'Withdrawal Rejected',
-                'message' => 'Your withdrawal request has been rejected. Reason: ' . $request->admin_note,
-                'type' => 'error'
-            ]);
-
-            // Send rejection email (queued)
-            try {
-                Mail::to($withdrawal->user->email)
-                    ->queue(new WithdrawalRejectedMail($withdrawal, $request->admin_note));
-            } catch (\Exception $e) {
-                \Log::error('Failed to send withdrawal rejection email: ' . $e->getMessage());
-            }
-        });
-
-        return back()->with('success', 'Withdrawal rejected successfully and user notified.');
+        try {
+            $this->withdrawalService->rejectWithdrawal($withdrawal, $request->admin_note);
+            return back()->with('success', 'Withdrawal rejected successfully and user notified.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Withdrawal rejection failed: ' . $e->getMessage());
+        }
     }
 
     public function bulkAction(Request $request)
@@ -187,89 +147,36 @@ class WithdrawalRequestController extends Controller
             'admin_note' => 'required_if:action,reject|string|max:500',
         ]);
 
-        $withdrawals = WithdrawalRequest::with('user')
-            ->whereIn('id', $request->withdrawals)
-            ->where('status', 'pending')
-            ->get();
-
-        if ($withdrawals->isEmpty()) {
-            return back()->with('error', 'No valid pending withdrawals selected.');
+        // Check blockchain service availability for approve action
+        if ($request->action === 'approve' && !$this->withdrawalService->isBlockchainAvailable()) {
+            return back()->with('error', 'Blockchain service is currently unavailable. Cannot process withdrawals.');
         }
 
-        $processed = 0;
-        $failed = 0;
-
-        foreach ($withdrawals as $withdrawal) {
-            try {
-                if ($request->action === 'approve') {
-                    $this->processBulkWithdrawal($withdrawal);
-                } else {
-                    $this->rejectBulkWithdrawal($withdrawal, $request->admin_note);
-                }
-                $processed++;
-            } catch (\Exception $e) {
-                \Log::error('Bulk withdrawal processing failed for ID ' . $withdrawal->id . ': ' . $e->getMessage());
-                $failed++;
-            }
+        if ($request->action === 'approve') {
+            $results = $this->withdrawalService->processBulkWithdrawals(
+                $request->withdrawals,
+                $request->admin_note ?? 'Bulk processed'
+            );
+        } else {
+            $results = $this->withdrawalService->rejectBulkWithdrawals(
+                $request->withdrawals,
+                $request->admin_note
+            );
         }
 
-        $message = "Processed: {$processed}, Failed: {$failed}";
-        $type = $failed > 0 ? 'warning' : 'success';
+        // Build response message
+        $message = "Processed: {$results['processed']}";
+        if ($results['failed'] > 0) {
+            $message .= ", Failed: {$results['failed']}";
+        }
+
+        if ($request->action === 'approve' && !empty($results['successful'])) {
+            $message .= ". Successful transactions: " . count($results['successful']);
+        }
+
+        $type = $results['failed'] > 0 ? 'warning' : 'success';
 
         return back()->with($type, $message);
-    }
-
-    private function processBulkWithdrawal($withdrawal)
-    {
-        \DB::transaction(function () use ($withdrawal) {
-            $withdrawal->update([
-                'status' => 'completed',
-                'processed_at' => now(),
-                'admin_note' => 'Bulk processed - ' . now()->format('Y-m-d H:i'),
-            ]);
-
-            // Create transaction record
-            Transaction::create([
-                'user_id' => $withdrawal->user_id,
-                'txn_id' => 'TXN' . strtoupper(uniqid()),
-                'txn_type' => 'withdraw',
-                'amount' => -$withdrawal->amount,
-                'status' => 'completed',
-                'details' => 'Withdrawal processed - Net: ' . $withdrawal->net_amount . ' USDT',
-            ]);
-
-            // Update wallet
-            $wallet = Wallet::where('user_id', $withdrawal->user_id)->first();
-            if ($wallet) {
-                $wallet->decrement('earning_balance', $withdrawal->amount);
-                $wallet->increment('total_withdrawn', $withdrawal->amount);
-            }
-
-            // Send email
-            Mail::to($withdrawal->user->email)
-                ->queue(new WithdrawalApprovedMail($withdrawal));
-        });
-    }
-
-    private function rejectBulkWithdrawal($withdrawal, $adminNote)
-    {
-        \DB::transaction(function () use ($withdrawal, $adminNote) {
-            $withdrawal->update([
-                'status' => 'rejected',
-                'admin_note' => $adminNote,
-                'processed_at' => now(),
-            ]);
-
-            // Return funds
-            $wallet = Wallet::where('user_id', $withdrawal->user_id)->first();
-            if ($wallet) {
-                $wallet->increment('earning_balance', $withdrawal->amount);
-            }
-
-            // Send email
-            Mail::to($withdrawal->user->email)
-                ->queue(new WithdrawalRejectedMail($withdrawal, $adminNote));
-        });
     }
 
     public function getStats()
@@ -292,5 +199,28 @@ class WithdrawalRequestController extends Controller
                 'amount' => WithdrawalRequest::whereDate('created_at', '>=', $monthStart)->sum('net_amount'),
             ],
         ];
+    }
+
+    /**
+     * Check blockchain service status
+     */
+    public function checkBlockchainStatus()
+    {
+        try {
+            $status = $this->withdrawalService->getBlockchainStatus();
+            $available = $this->withdrawalService->isBlockchainAvailable();
+
+            return response()->json([
+                'available' => $available,
+                'status' => $status,
+                'timestamp' => now()->toISOString()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'available' => false,
+                'error' => $e->getMessage(),
+                'timestamp' => now()->toISOString()
+            ], 500);
+        }
     }
 }

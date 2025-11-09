@@ -4,8 +4,39 @@
 
 @section('content')
 <div class="space-y-6">
+    <!-- Blockchain Status Alert -->
+    @if(!$blockchainAvailable)
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <i class="fas fa-exclamation-triangle text-red-400 text-xl"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">Blockchain Service Unavailable</h3>
+                <p class="text-sm text-red-700 mt-1">
+                    The blockchain withdrawal service is currently unavailable. Withdrawals cannot be processed until the service is restored.
+                </p>
+            </div>
+        </div>
+    </div>
+    @else
+    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <i class="fas fa-check-circle text-green-400 text-xl"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-green-800">Blockchain Service Online</h3>
+                <p class="text-sm text-green-700 mt-1">
+                    The blockchain withdrawal service is available and ready to process withdrawals.
+                </p>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-yellow-500 text-white mr-4">
@@ -15,6 +46,7 @@
                     <p class="text-sm font-medium text-gray-600">Pending</p>
                     <p class="text-2xl font-semibold text-gray-900">{{ $totalPending }}</p>
                     <p class="text-sm text-gray-500">{{ number_format($totalPendingAmount, 2) }} USDT</p>
+                    <p class="text-xs text-gray-400">Net Amount to Send</p>
                 </div>
             </div>
         </div>
@@ -28,6 +60,7 @@
                     <p class="text-sm font-medium text-gray-600">Processing</p>
                     <p class="text-2xl font-semibold text-gray-900">{{ $totalProcessing }}</p>
                     <p class="text-sm text-gray-500">{{ number_format($totalProcessingAmount, 2) }} USDT</p>
+                    <p class="text-xs text-gray-400">Net Amount to Send</p>
                 </div>
             </div>
         </div>
@@ -55,6 +88,18 @@
                 </div>
             </div>
         </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-orange-500 text-white mr-4">
+                    <i class="fas fa-exclamation-triangle text-2xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Failed</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ $totalFailed }}</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Filters and Bulk Actions -->
@@ -75,6 +120,7 @@
                             <option value="processing" {{ $filters['status'] == 'processing' ? 'selected' : '' }}>Processing</option>
                             <option value="completed" {{ $filters['status'] == 'completed' ? 'selected' : '' }}>Completed</option>
                             <option value="rejected" {{ $filters['status'] == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                            <option value="failed" {{ $filters['status'] == 'failed' ? 'selected' : '' }}>Failed</option>
                         </select>
                         
                         <input type="date" name="date_from" value="{{ $filters['date_from'] }}" 
@@ -122,7 +168,7 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" {{ !$blockchainAvailable ? 'disabled' : '' }}>
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount Details</th>
@@ -136,8 +182,10 @@
                         @foreach($withdrawals as $withdrawal)
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                @if($withdrawal->status == 'pending')
+                                @if($withdrawal->status == 'pending' && $blockchainAvailable)
                                 <input type="checkbox" name="withdrawal_ids[]" value="{{ $withdrawal->id }}" class="withdrawal-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                @elseif($withdrawal->status == 'pending')
+                                <input type="checkbox" disabled title="Blockchain service unavailable" class="rounded border-gray-300 text-gray-400">
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -145,7 +193,7 @@
                                     <div class="ml-4">
                                         <div class="text-sm font-medium text-gray-900">{{ $withdrawal->user->name }}</div>
                                         <div class="text-sm text-gray-500">{{ $withdrawal->user->email }}</div>
-                                        <div class="text-xs text-gray-400">ID: {{ $withdrawal->user->id }}</div>
+                                        <div class="text-xs text-gray-400">ID: {{ $withdrawal->user->id }} | Level: {{ $withdrawal->user->current_level }}</div>
                                     </div>
                                 </div>
                             </td>
@@ -155,8 +203,16 @@
                                     Fee: {{ number_format($withdrawal->fee, 2) }} USDT
                                 </div>
                                 <div class="text-green-600 text-xs font-medium">
-                                    Net: {{ number_format($withdrawal->net_amount, 2) }} USDT
+                                    Net to Send: {{ number_format($withdrawal->net_amount, 2) }} USDT
                                 </div>
+                                @if($withdrawal->tx_hash)
+                                <div class="text-blue-600 text-xs mt-1">
+                                    <i class="fas fa-link mr-1"></i>
+                                    <a href="https://bscscan.com/tx/{{ $withdrawal->tx_hash }}" target="_blank" class="hover:underline">
+                                        TX: {{ \Str::limit($withdrawal->tx_hash, 10) }}
+                                    </a>
+                                </div>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-mono text-gray-900 truncate" style="max-width: 200px;" title="{{ $withdrawal->usdt_address }}">
@@ -171,12 +227,22 @@
                                     @if($withdrawal->status == 'pending') bg-yellow-100 text-yellow-800
                                     @elseif($withdrawal->status == 'processing') bg-blue-100 text-blue-800
                                     @elseif($withdrawal->status == 'completed') bg-green-100 text-green-800
-                                    @else bg-red-100 text-red-800 @endif capitalize">
+                                    @elseif($withdrawal->status == 'rejected') bg-red-100 text-red-800
+                                    @elseif($withdrawal->status == 'failed') bg-orange-100 text-orange-800
+                                    @endif capitalize">
+                                    @if($withdrawal->status == 'processing')
+                                    <i class="fas fa-spinner fa-spin mr-1"></i>
+                                    @endif
                                     {{ $withdrawal->status }}
                                 </span>
                                 @if($withdrawal->processed_at)
                                 <div class="text-xs text-gray-500 mt-1">
-                                    {{ $withdrawal->processed_at->format('M d, Y') }}
+                                    {{ $withdrawal->processed_at->format('M d, Y H:i') }}
+                                </div>
+                                @endif
+                                @if($withdrawal->status == 'failed' && $withdrawal->admin_note)
+                                <div class="text-xs text-red-500 mt-1" title="{{ $withdrawal->admin_note }}">
+                                    {{ \Str::limit($withdrawal->admin_note, 50) }}
                                 </div>
                                 @endif
                             </td>
@@ -187,11 +253,25 @@
                                 <a href="{{ route('admin.withdrawals.show', $withdrawal->id) }}" class="text-blue-600 hover:text-blue-900 mr-3">Review</a>
                                 
                                 @if($withdrawal->status == 'pending')
-                                <form method="POST" action="{{ route('admin.withdrawals.process', $withdrawal->id) }}" class="inline">
-                                    @csrf
-                                    <button type="submit" class="text-green-600 hover:text-green-900 mr-2" onclick="return confirm('Approve this withdrawal? You need to send {{ number_format($withdrawal->net_amount, 2) }} USDT')">Approve</button>
-                                </form>
-                                <button type="button" onclick="showRejectModal({{ $withdrawal->id }})" class="text-red-600 hover:text-red-900">Reject</button>
+                                    @if($blockchainAvailable)
+                                    <form method="POST" action="{{ route('admin.withdrawals.process', $withdrawal->id) }}" class="inline">
+                                        @csrf
+                                        <button type="submit" class="text-green-600 hover:text-green-900 mr-2" onclick="return confirm('Approve this withdrawal? You need to send {{ number_format($withdrawal->net_amount, 2) }} USDT to user\\'s wallet.')">Approve</button>
+                                    </form>
+                                    <button type="button" onclick="showRejectModal({{ $withdrawal->id }})" class="text-red-600 hover:text-red-900">Reject</button>
+                                    @else
+                                    <span class="text-gray-400 text-xs" title="Blockchain service unavailable">Approve</span>
+                                    <span class="text-gray-400 text-xs ml-2" title="Blockchain service unavailable">Reject</span>
+                                    @endif
+                                @elseif($withdrawal->status == 'failed')
+                                    @if($blockchainAvailable)
+                                    <form method="POST" action="{{ route('admin.withdrawals.process', $withdrawal->id) }}" class="inline">
+                                        @csrf
+                                        <button type="submit" class="text-green-600 hover:text-green-900 mr-2" onclick="return confirm('Retry this failed withdrawal? You need to send {{ number_format($withdrawal->net_amount, 2) }} USDT to user\\'s wallet.')">Retry</button>
+                                    </form>
+                                    @else
+                                    <span class="text-gray-400 text-xs" title="Blockchain service unavailable">Retry</span>
+                                    @endif
                                 @endif
                             </td>
                         </tr>
@@ -220,11 +300,14 @@
                     <span id="selectedCount">0</span> withdrawal(s) selected
                 </h4>
                 <p class="text-sm text-yellow-700 mt-1">
-                    Total amount to send: <strong id="totalAmount">0.00</strong> USDT
+                    Total amount to deduct from users: <strong id="totalAmount">0.00</strong> USDT
+                </p>
+                <p class="text-sm text-green-700">
+                    Total amount to send to users: <strong id="totalNetAmount">0.00</strong> USDT
                 </p>
             </div>
             <div class="flex space-x-2">
-                <button type="button" onclick="bulkApprove()" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+                <button type="button" onclick="bulkApprove()" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 {{ !$blockchainAvailable ? 'opacity-50 cursor-not-allowed' : '' }}" {{ !$blockchainAvailable ? 'disabled' : '' }}>
                     <i class="fas fa-check mr-2"></i> Approve Selected
                 </button>
                 <button type="button" onclick="showBulkRejectModal()" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
@@ -289,12 +372,12 @@
 let currentWithdrawalId = null;
 let selectedWithdrawals = new Set();
 let withdrawalAmounts = {};
+let withdrawalNetAmounts = {};
 
 // Copy to clipboard function
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
-        // Optional: Show a toast notification
-        console.log('Copied to clipboard:', text);
+        alert('Address copied to clipboard!');
     });
 }
 
@@ -308,17 +391,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const withdrawalId = checkbox.value;
         const row = checkbox.closest('tr');
         const amountText = row.querySelector('.font-semibold').textContent;
+        const netAmountText = row.querySelector('.text-green-600').textContent;
+        
         const amount = parseFloat(amountText.replace(' USDT', '').replace(',', ''));
+        const netAmount = parseFloat(netAmountText.replace('Net to Send: ', '').replace(' USDT', '').replace(',', ''));
+        
         withdrawalAmounts[withdrawalId] = amount;
+        withdrawalNetAmounts[withdrawalId] = netAmount;
     });
     
     selectAll.addEventListener('change', function() {
         checkboxes.forEach(checkbox => {
-            checkbox.checked = this.checked;
-            if (this.checked) {
-                selectedWithdrawals.add(checkbox.value);
-            } else {
-                selectedWithdrawals.delete(checkbox.value);
+            if (!checkbox.disabled) {
+                checkbox.checked = this.checked;
+                if (this.checked) {
+                    selectedWithdrawals.add(checkbox.value);
+                } else {
+                    selectedWithdrawals.delete(checkbox.value);
+                }
             }
         });
         updateBulkActionsPanel();
@@ -341,15 +431,20 @@ function updateBulkActionsPanel() {
     const panel = document.getElementById('bulkActionsPanel');
     const selectedCount = document.getElementById('selectedCount');
     const totalAmount = document.getElementById('totalAmount');
+    const totalNetAmount = document.getElementById('totalNetAmount');
     
     if (selectedWithdrawals.size > 0) {
         let total = 0;
+        let totalNet = 0;
+        
         selectedWithdrawals.forEach(id => {
             total += withdrawalAmounts[id] || 0;
+            totalNet += withdrawalNetAmounts[id] || 0;
         });
         
         selectedCount.textContent = selectedWithdrawals.size;
         totalAmount.textContent = total.toFixed(2);
+        totalNetAmount.textContent = totalNet.toFixed(2);
         panel.classList.remove('hidden');
     } else {
         panel.classList.add('hidden');
@@ -358,7 +453,9 @@ function updateBulkActionsPanel() {
 
 function clearSelection() {
     selectedWithdrawals.clear();
-    document.querySelectorAll('.withdrawal-checkbox').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.withdrawal-checkbox').forEach(cb => {
+        if (!cb.disabled) cb.checked = false;
+    });
     document.getElementById('selectAll').checked = false;
     updateBulkActionsPanel();
 }
@@ -389,8 +486,9 @@ function bulkApprove() {
     if (selectedWithdrawals.size === 0) return;
     
     const totalAmount = Array.from(selectedWithdrawals).reduce((sum, id) => sum + (withdrawalAmounts[id] || 0), 0);
+    const totalNetAmount = Array.from(selectedWithdrawals).reduce((sum, id) => sum + (withdrawalNetAmounts[id] || 0), 0);
     
-    if (confirm(`Approve ${selectedWithdrawals.size} withdrawal(s)? You need to send ${totalAmount.toFixed(2)} USDT in total.`)) {
+    if (confirm(`Approve ${selectedWithdrawals.size} withdrawal(s)?\n\nTotal amount to deduct from users: ${totalAmount.toFixed(2)} USDT\nTotal amount to send to users: ${totalNetAmount.toFixed(2)} USDT`)) {
         document.getElementById('bulkAction').value = 'approve';
         document.getElementById('bulkAdminNote').value = 'Bulk approved - ' + new Date().toLocaleString();
         updateSelectedWithdrawalsInput();
@@ -435,5 +533,21 @@ window.onclick = function(event) {
         closeBulkRejectModal();
     }
 }
+
+// Auto-refresh blockchain status every 30 seconds
+setInterval(function() {
+    fetch('{{ route("admin.withdrawals.blockchain-status") }}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.available) {
+                document.querySelector('[class*="bg-red-50"]')?.classList.add('hidden');
+                document.querySelector('[class*="bg-green-50"]')?.classList.remove('hidden');
+            } else {
+                document.querySelector('[class*="bg-green-50"]')?.classList.add('hidden');
+                document.querySelector('[class*="bg-red-50"]')?.classList.remove('hidden');
+            }
+        })
+        .catch(error => console.error('Failed to check blockchain status:', error));
+}, 30000);
 </script>
 @endsection

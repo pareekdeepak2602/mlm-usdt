@@ -8,6 +8,7 @@
     use App\Http\Controllers\ReferralController;
     use App\Http\Controllers\WithdrawalController;
     use App\Http\Controllers\LandingPageController;
+    use App\Http\Controllers\SupportController;
 
     // Admin Controllers
 use App\Http\Controllers\Admin\AdminController;
@@ -20,6 +21,8 @@ use App\Http\Controllers\Admin\KYCController;
 use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\LevelCommissionController;
+use App\Http\Controllers\Admin\AdminSupportController;
+
 
     // Authentication Routes
     Route::get('/', [LandingPageController::class, 'index'])->name('landing');
@@ -99,6 +102,9 @@ use App\Http\Controllers\Admin\LevelCommissionController;
         Route::get('/withdrawals/create', [WithdrawalController::class, 'create'])->name('withdraw.create');
         Route::post('/withdrawals', [WithdrawalController::class, 'store'])->name('withdraw.store');
         Route::get('/withdrawals/{id}', [WithdrawalController::class, 'show'])->name('withdrawals.show');
+
+         Route::get('/support', [SupportController::class, 'index'])->name('support.index');
+    Route::post('/support/inquiry', [SupportController::class, 'storeInquiry'])->name('support.store');
     });
 
 
@@ -108,7 +114,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', [AdminController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AdminController::class, 'login']);
     Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
-    
+    Route::get('/withdrawals/blockchain-status', [WithdrawalRequestController::class, 'checkBlockchainStatus'])->name('withdrawals.blockchain-status');
+
     // Protected Admin Routes
     Route::middleware(['admin.auth'])->group(function () {
         // Dashboard
@@ -174,5 +181,14 @@ Route::get('/level-commissions/{id}', [LevelCommissionController::class, 'show']
 Route::get('/level-commissions/{id}/edit', [LevelCommissionController::class, 'edit'])->name('level-commissions.edit');
 Route::put('/level-commissions/{id}', [LevelCommissionController::class, 'update'])->name('level-commissions.update');
 Route::delete('/level-commissions/{id}', [LevelCommissionController::class, 'destroy'])->name('level-commissions.destroy');
+   
+Route::prefix('support')->name('support.')->group(function () {
+        Route::get('/', [AdminSupportController::class, 'index'])->name('index');
+        Route::post('/settings', [AdminSupportController::class, 'updateSettings'])->name('settings.update');
+        Route::get('/inquiries', [AdminSupportController::class, 'inquiries'])->name('inquiries');
+        Route::get('/inquiries/{inquiry}', [AdminSupportController::class, 'showInquiry'])->name('inquiries.show');
+        Route::put('/inquiries/{inquiry}/status', [AdminSupportController::class, 'updateInquiryStatus'])->name('inquiries.update-status');
     });
+});
+
 });

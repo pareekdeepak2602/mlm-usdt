@@ -353,6 +353,13 @@
                     </li>
                     
                     <li class="divider"></li>
+                    <li class="{{ request()->routeIs('support.*') ? 'active' : '' }}">
+        <a href="{{ route('support.index') }}">
+            <i class="fas fa-headset"></i>Support Center
+        </a>
+    </li>
+    
+    <li class="divider"></li>
                     
                     <li class="{{ request()->routeIs('profile') || request()->routeIs('password.change') ? 'active' : '' }}">
                         <a href="{{ route('profile') }}">

@@ -250,25 +250,85 @@ private static function sendDepositConfirmationEmail($user, $amount, $transactio
     
     public static function getBalance($userId)
     {
-        $wallet = Wallet::where('user_id', $userId)->first();
-        if (!$wallet) {
+        $user = User::find($userId);
+        if (!$user) {
             return [
                 'deposit_balance' => 0,
                 'earning_balance' => 0,
                 'referral_balance' => 0,
-                'total_income' => 0,
-                'total_withdrawn' => 0,
                 'available_balance' => 0,
+                'total_balance' => 0,
+                'asset_hold' => 0,
+                'total_withdrawn' => 0,
+                'withdrawable_balance' => 0
             ];
         }
+
+        $wallet = $user->wallet;
+        if (!$wallet) {
+            $wallet = Wallet::create(['user_id' => $userId]);
+        }
+
+        $totalBalance = $wallet->deposit_balance + $wallet->earning_balance + $wallet->referral_balance;
         
+        // Calculate asset hold based on user's current level from investment_plans
+        $assetHold = self::getAssetHoldByLevel($user->current_level);
+        
+        // Withdrawable balance = total balance - asset hold (cannot be negative)
+        $withdrawableBalance = max(0, $totalBalance - $assetHold);
+
         return [
             'deposit_balance' => $wallet->deposit_balance,
             'earning_balance' => $wallet->earning_balance,
             'referral_balance' => $wallet->referral_balance,
-            'total_income' => $wallet->total_income,
+            'available_balance' => $totalBalance, // Total available without considering asset hold
+            'total_balance' => $totalBalance,
+            'asset_hold' => $assetHold,
             'total_withdrawn' => $wallet->total_withdrawn,
-            'available_balance' => $wallet->deposit_balance + $wallet->earning_balance + $wallet->referral_balance,
+            'withdrawable_balance' => $withdrawableBalance // Actual amount user can withdraw
         ];
     }
+
+    /**
+     * Get asset hold requirement based on user's current level
+     */
+    private static function getAssetHoldByLevel($currentLevel)
+    {
+        $investmentPlan = InvestmentPlan::where('level', $currentLevel)->first();
+        
+        if ($investmentPlan) {
+            return $investmentPlan->asset_hold ?? 0;
+        }
+        
+        // Default asset hold if level not found
+        return match($currentLevel) {
+            0 => 50.00,
+            1 => 100.00,
+            2 => 200.00,
+            3 => 700.00,
+            4 => 1500.00,
+            5 => 3500.00,
+            6 => 7000.00,
+            default => 0
+        };
+    }
+
+    /**
+     * Check if user can withdraw specified amount considering asset hold
+     */
+    public static function canWithdraw($userId, $amount)
+    {
+        $balance = self::getBalance($userId);
+        return $amount <= $balance['withdrawable_balance'];
+    }
+
+    /**
+     * Get maximum withdrawable amount for user
+     */
+    public static function getMaxWithdrawableAmount($userId)
+    {
+        $balance = self::getBalance($userId);
+        return $balance['withdrawable_balance'];
+    }
+    
 }

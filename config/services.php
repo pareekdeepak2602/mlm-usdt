@@ -39,4 +39,9 @@ return [
     'network' => env('TRANSACTION_VERIFIER_NETWORK', 'bsc_testnet'),
     'company_wallet' => env('COMPANY_WALLET', '0x5CE2C945eeD9FBA974363fF028D86ed641b7b185'),
 ],
+ 'blockchain' => [
+        'base_url' => env('BLOCKCHAIN_SERVICE_URL', 'http://localhost:8000'),
+        'api_key' => env('BLOCKCHAIN_API_KEY'),
+        'api_secret' => env('BLOCKCHAIN_API_SECRET'),
+    ],
 ];

@@ -26,29 +26,69 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="text-center">
-                                <h5 class="text-primary">Available Balance</h5>
-                                <h3>${{ number_format($balance['available_balance'] ?? 0, 2) }}</h3>
+                                <h5 class="text-success">Total Balance</h5>
+                                <h3>${{ number_format($balance['total_balance'] ?? 0, 2) }}</h3>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
+                            <div class="text-center">
+                                <h5 class="text-info">Your Level</h5>
+                                <h3>Level {{ Auth::user()->current_level }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-center">
+                                <h5 class="text-warning">Asset Hold</h5>
+                                <h3>${{ number_format($balance['asset_hold'] ?? 0, 2) }}</h3>
+                                <small class="text-muted">Level Requirement</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-center">
+                                <h5 class="text-primary">Available for Withdrawal</h5>
+                                <h3>${{ number_format($balance['withdrawable_balance'] ?? 0, 2) }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
                             <div class="text-center">
                                 <h5 class="text-warning">Minimum Withdrawal</h5>
                                 <h3>${{ number_format($minWithdrawal, 2) }}</h3>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="text-center">
                                 <h5 class="text-danger">Withdrawal Fee</h5>
                                 <h3>{{ $withdrawalFee }}%</h3>
+                                <small class="text-muted">Net: ${{ number_format(100 - ($withdrawalFee / 100 * 100), 2) }} for $100</small>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="text-center">
-                                <h5 class="text-success">Net Amount Example</h5>
-                                <h3>${{ number_format(100 - ($withdrawalFee / 100 * 100), 2) }}</h3>
-                                <small class="text-muted">For $100 withdrawal</small>
+                    </div>
+                    
+                    <!-- Asset Hold Explanation -->
+                    @if($balance['asset_hold'] > 0)
+                    <div class="alert alert-info mt-3">
+                        <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Asset Hold Information</h6>
+                        <p class="mb-2">As a <strong>Level {{ Auth::user()->current_level }}</strong> member, you need to maintain <strong>${{ number_format($balance['asset_hold'], 2) }}</strong> in your account to preserve your current level benefits and prevent downgrading.</p>
+                        <p class="mb-0"><strong>Note:</strong> You can only withdraw amounts above this asset hold requirement.</p>
+                    </div>
+                    @endif
+
+                    <!-- Level Benefits Information -->
+                    <div class="alert alert-success mt-3">
+                        <h6 class="alert-heading"><i class="fas fa-star me-2"></i>Level {{ Auth::user()->current_level }} Benefits</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Daily Earnings:</strong> 
+                                @php
+                                    $investmentPlan = \App\Models\InvestmentPlan::where('level', Auth::user()->current_level)->first();
+                                    $dailyPercentage = $investmentPlan ? $investmentPlan->daily_percentage : 0;
+                                @endphp
+                                {{ $dailyPercentage }}%
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Referral Commissions:</strong> Up to 3 levels
                             </div>
                         </div>
                     </div>
@@ -97,7 +137,7 @@
                                                value="{{ old('amount') }}" 
                                                step="0.01" 
                                                min="{{ $minWithdrawal }}" 
-                                               max="{{ $balance['available_balance'] ?? 0 }}"
+                                               max="{{ $balance['withdrawable_balance'] ?? 0 }}"
                                                placeholder="Enter amount"
                                                required>
                                     </div>
@@ -106,7 +146,7 @@
                                     @enderror
                                     <small class="form-text text-muted">
                                         Minimum: ${{ number_format($minWithdrawal, 2) }} | 
-                                        Available: ${{ number_format($balance['available_balance'] ?? 0, 2) }}
+                                        Maximum: ${{ number_format($balance['withdrawable_balance'] ?? 0, 2) }}
                                     </small>
                                 </div>
                             </div>
@@ -141,19 +181,49 @@
                             </small>
                         </div>
 
+                        <!-- Quick Amount Buttons -->
+                        @if($balance['withdrawable_balance'] > $minWithdrawal)
+                        <div class="mb-3">
+                            <label class="form-label">Quick Amount Selection</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                @php
+                                    $quickAmounts = [
+                                        $minWithdrawal,
+                                        min(100, $balance['withdrawable_balance']),
+                                        min(200, $balance['withdrawable_balance']),
+                                        min(500, $balance['withdrawable_balance']),
+                                        $balance['withdrawable_balance']
+                                    ];
+                                    $quickAmounts = array_unique($quickAmounts);
+                                    sort($quickAmounts);
+                                @endphp
+                                
+                                @foreach($quickAmounts as $quickAmount)
+                                    @if($quickAmount >= $minWithdrawal && $quickAmount <= $balance['withdrawable_balance'])
+                                        <button type="button" class="btn btn-outline-primary btn-sm quick-amount" data-amount="{{ $quickAmount }}">
+                                            ${{ number_format($quickAmount, 0) }}
+                                        </button>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+
                         <div class="alert alert-warning">
                             <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Important Withdrawal Information</h6>
                             <ul class="mb-0">
                                 <li>Withdrawals are processed within 24-48 hours</li>
                                 <li>Withdrawal fee: {{ $withdrawalFee }}% will be deducted</li>
                                 <li>Minimum withdrawal amount: ${{ number_format($minWithdrawal, 2) }}</li>
+                                <li>Asset hold requirement: ${{ number_format($balance['asset_hold'] ?? 0, 2) }} for Level {{ Auth::user()->current_level }}</li>
+                                <li>Maximum withdrawable amount: ${{ number_format($balance['withdrawable_balance'] ?? 0, 2) }}</li>
                                 <li>Ensure your USDT BEP20 address is correct</li>
                                 <li>Withdrawals are sent via Binance Smart Chain (BEP20)</li>
                             </ul>
                         </div>
 
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success btn-lg">
+                            <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
                                 <i class="fas fa-paper-plane me-2"></i> Submit Withdrawal Request
                             </button>
                         </div>
@@ -162,7 +232,7 @@
             </div>
         </div>
 
-        <!-- Withdrawal Guide -->
+        <!-- Withdrawal Guide & Information -->
         <div class="col-lg-4">
             <!-- Balance Breakdown -->
             <div class="card shadow mb-4">
@@ -184,9 +254,59 @@
                     </div>
                     <hr>
                     <div class="balance-item mb-2">
-                        <strong class="text-primary">Available for Withdrawal:</strong> 
-                        <span class="float-end text-primary">${{ number_format($balance['available_balance'] ?? 0, 2) }}</span>
+                        <strong class="text-success">Total Balance:</strong> 
+                        <span class="float-end text-success">${{ number_format($balance['total_balance'] ?? 0, 2) }}</span>
                     </div>
+                    <div class="balance-item mb-2">
+                        <strong class="text-warning">Asset Hold (Level {{ Auth::user()->current_level }}):</strong> 
+                        <span class="float-end text-warning">-${{ number_format($balance['asset_hold'] ?? 0, 2) }}</span>
+                    </div>
+                    <div class="balance-item mb-2">
+                        <strong class="text-primary">Available for Withdrawal:</strong> 
+                        <span class="float-end text-primary">${{ number_format($balance['withdrawable_balance'] ?? 0, 2) }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Level Requirements -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Level {{ Auth::user()->current_level }} Requirements</h6>
+                </div>
+                <div class="card-body">
+                    @php
+                        $currentPlan = \App\Models\InvestmentPlan::where('level', Auth::user()->current_level)->first();
+                    @endphp
+                    @if($currentPlan)
+                    <div class="level-info">
+                        <div class="info-item mb-2">
+                            <strong>Level Name:</strong> 
+                            <span class="float-end">{{ $currentPlan->name }}</span>
+                        </div>
+                        <div class="info-item mb-2">
+                            <strong>Asset Hold:</strong> 
+                            <span class="float-end">${{ number_format($currentPlan->asset_hold, 2) }}</span>
+                        </div>
+                        <div class="info-item mb-2">
+                            <strong>Daily Earnings:</strong> 
+                            <span class="float-end">{{ $currentPlan->daily_percentage }}%</span>
+                        </div>
+                        @if($currentPlan->direct_referrals_required)
+                        <div class="info-item mb-2">
+                            <strong>Direct Referrals:</strong> 
+                            <span class="float-end">{{ $currentPlan->direct_referrals_required }}</span>
+                        </div>
+                        @endif
+                        @if($currentPlan->indirect_referrals_required)
+                        <div class="info-item mb-2">
+                            <strong>Indirect Referrals:</strong> 
+                            <span class="float-end">{{ $currentPlan->indirect_referrals_required }}</span>
+                        </div>
+                        @endif
+                    </div>
+                    @else
+                    <p class="text-muted mb-0">Level information not available.</p>
+                    @endif
                 </div>
             </div>
 
@@ -198,28 +318,28 @@
                 <div class="card-body">
                     <div class="steps">
                         <div class="step mb-3">
-                            <div class="step-number bg-warning">1</div>
+                            <div class="step-number bg-primary">1</div>
                             <div class="step-content">
                                 <strong>Submit Request</strong>
-                                <p class="mb-0 small">Fill out the withdrawal form</p>
+                                <p class="mb-0 small">Fill and submit withdrawal form</p>
                             </div>
                         </div>
                         <div class="step mb-3">
-                            <div class="step-number bg-warning">2</div>
+                            <div class="step-number bg-info">2</div>
                             <div class="step-content">
                                 <strong>Admin Review</strong>
-                                <p class="mb-0 small">We review your request (24-48 hours)</p>
+                                <p class="mb-0 small">Request reviewed within 24-48 hours</p>
                             </div>
                         </div>
                         <div class="step mb-3">
                             <div class="step-number bg-warning">3</div>
                             <div class="step-content">
                                 <strong>Processing</strong>
-                                <p class="mb-0 small">We process your withdrawal</p>
+                                <p class="mb-0 small">Funds prepared for transfer</p>
                             </div>
                         </div>
                         <div class="step">
-                            <div class="step-number bg-warning">4</div>
+                            <div class="step-number bg-success">4</div>
                             <div class="step-content">
                                 <strong>Completed</strong>
                                 <p class="mb-0 small">Funds sent to your BEP20 wallet</p>
@@ -264,48 +384,112 @@
     font-weight: bold;
     margin-right: 15px;
     flex-shrink: 0;
+    font-size: 14px;
 }
 .step-content {
     flex: 1;
 }
-.balance-item {
-    padding: 5px 0;
+.balance-item, .info-item {
+    padding: 8px 0;
     border-bottom: 1px solid #f8f9fa;
+}
+.balance-item:last-child, .info-item:last-child {
+    border-bottom: none;
+}
+.quick-amount {
+    transition: all 0.3s ease;
+}
+.quick-amount:hover {
+    transform: translateY(-2px);
 }
 </style>
 @endpush
 
 @push('scripts')
 <script>
-document.getElementById('amount').addEventListener('input', function() {
-    const amount = parseFloat(this.value) || 0;
-    const feePercentage = {{ $withdrawalFee }};
-    const fee = (amount * feePercentage) / 100;
-    const netAmount = amount - fee;
-    
-    const feeCalculation = document.getElementById('feeCalculation');
-    
-    if (amount > 0) {
-        feeCalculation.innerHTML = `
-            <div class="row small">
-                <div class="col-6">Amount:</div>
-                <div class="col-6 text-end">$${amount.toFixed(2)}</div>
-                <div class="col-6">Fee (${feePercentage}%):</div>
-                <div class="col-6 text-end text-danger">-$${fee.toFixed(2)}</div>
-                <div class="col-6"><strong>You Receive:</strong></div>
-                <div class="col-6 text-end text-success"><strong>$${netAmount.toFixed(2)}</strong></div>
-            </div>
-        `;
-    } else {
-        feeCalculation.innerHTML = '<small class="text-muted">Enter amount to see fee calculation</small>';
-    }
-});
-
-// Initialize calculation if there's a value
 document.addEventListener('DOMContentLoaded', function() {
     const amountInput = document.getElementById('amount');
+    const feeCalculation = document.getElementById('feeCalculation');
+    const submitBtn = document.getElementById('submitBtn');
+    const feePercentage = {{ $withdrawalFee }};
+    const minWithdrawal = {{ $minWithdrawal }};
+    const maxWithdrawal = {{ $balance['withdrawable_balance'] ?? 0 }};
+
+    // Fee calculation function
+    function calculateFee(amount) {
+        const fee = (amount * feePercentage) / 100;
+        const netAmount = amount - fee;
+        
+        if (amount > 0) {
+            feeCalculation.innerHTML = `
+                <div class="row small">
+                    <div class="col-6">Withdrawal Amount:</div>
+                    <div class="col-6 text-end">$${amount.toFixed(2)}</div>
+                    <div class="col-6">Fee (${feePercentage}%):</div>
+                    <div class="col-6 text-end text-danger">-$${fee.toFixed(2)}</div>
+                    <div class="col-12"><hr class="my-1"></div>
+                    <div class="col-6"><strong>You Will Receive:</strong></div>
+                    <div class="col-6 text-end text-success"><strong>$${netAmount.toFixed(2)}</strong></div>
+                </div>
+            `;
+        } else {
+            feeCalculation.innerHTML = '<small class="text-muted">Enter amount to see fee calculation</small>';
+        }
+    }
+
+    // Input event listener
+    amountInput.addEventListener('input', function() {
+        const amount = parseFloat(this.value) || 0;
+        calculateFee(amount);
+        
+        // Validate amount range
+        if (amount > 0) {
+            if (amount < minWithdrawal) {
+                this.setCustomValidity(`Minimum withdrawal amount is $${minWithdrawal}`);
+            } else if (amount > maxWithdrawal) {
+                this.setCustomValidity(`Maximum withdrawal amount is $${maxWithdrawal}`);
+            } else {
+                this.setCustomValidity('');
+            }
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+
+    // Quick amount buttons
+    document.querySelectorAll('.quick-amount').forEach(button => {
+        button.addEventListener('click', function() {
+            const amount = parseFloat(this.getAttribute('data-amount'));
+            amountInput.value = amount;
+            calculateFee(amount);
+            amountInput.focus();
+        });
+    });
+
+    // Form submission validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const amount = parseFloat(amountInput.value);
+        
+        if (amount < minWithdrawal) {
+            e.preventDefault();
+            alert(`Minimum withdrawal amount is $${minWithdrawal}`);
+            return;
+        }
+        
+        if (amount > maxWithdrawal) {
+            e.preventDefault();
+            alert(`Maximum withdrawal amount is $${maxWithdrawal}`);
+            return;
+        }
+
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Processing...';
+        submitBtn.disabled = true;
+    });
+
+    // Initialize calculation if there's a value
     if (amountInput.value) {
-        amountInput.dispatchEvent(new Event('input'));
+        calculateFee(parseFloat(amountInput.value));
     }
 });
 </script>

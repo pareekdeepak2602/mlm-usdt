@@ -11,16 +11,23 @@ use App\Models\Notification;
 
 class WithdrawalService
 {
-    public static function requestWithdrawal($userId, $amount, $usdtAddress)
+  public static function requestWithdrawal($userId, $amount, $usdtAddress)
     {
         $user = User::find($userId);
         if (!$user) {
             return ['success' => false, 'message' => 'User not found'];
         }
         
-        $wallet = $user->wallet;
-        if (!$wallet || $wallet->available_balance < $amount) {
-            return ['success' => false, 'message' => 'Insufficient balance'];
+        // Check if user can withdraw this amount considering asset hold
+        if (!WalletService::canWithdraw($userId, $amount)) {
+            $balance = WalletService::getBalance($userId);
+            $maxWithdrawable = WalletService::getMaxWithdrawableAmount($userId);
+            
+            return ['success' => false, 'message' => 
+                "Insufficient withdrawable balance. " .
+                "You can withdraw maximum: {$maxWithdrawable} USDT. " .
+                "Asset Hold Requirement (Level {$user->current_level}): {$balance['asset_hold']} USDT"
+            ];
         }
         
         $minWithdrawal = SystemSetting::getValue('minimum_withdrawal', 30);

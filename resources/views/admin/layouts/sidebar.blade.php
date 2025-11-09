@@ -35,7 +35,10 @@
         <a href="{{ route('admin.kyc.index') }}" class="flex items-center py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white {{ request()->routeIs('admin.kyc.*') ? 'bg-gray-700 text-white font-semibold' : 'text-gray-300' }}">
             <i class="fas fa-id-card mr-3 w-5"></i>KYC Verification
         </a>
-        
+          <!-- Support Management Link -->
+        <a href="{{ route('admin.support.index') }}" class="flex items-center py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white {{ request()->routeIs('admin.support.*') ? 'bg-gray-700 text-white font-semibold' : 'text-gray-300' }}">
+            <i class="fas fa-headset mr-3 w-5"></i>Support Management
+        </a>
         <a href="{{ route('admin.contact-messages.index') }}" class="flex items-center py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white {{ request()->routeIs('admin.contact-messages.*') ? 'bg-gray-700 text-white font-semibold' : 'text-gray-300' }}">
             <i class="fas fa-envelope mr-3 w-5"></i>Contact Messages
         </a>
