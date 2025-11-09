@@ -21,7 +21,7 @@ class TransactionVerificationService
 
     public function __construct()
     {
-        $this->apiBaseUrl = 'http://localhost:8080';
+        $this->apiBaseUrl = 'https://api.smartchoice.org.in';
         $this->apiKey = config('services.transaction_verifier.key');
         $this->network = config('services.transaction_verifier.network', 'bsc_testnet');
     }
