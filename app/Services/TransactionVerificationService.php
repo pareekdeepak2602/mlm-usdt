@@ -21,7 +21,7 @@ class TransactionVerificationService
 
     public function __construct()
     {
-        $this->apiBaseUrl = 'https://api.smartchoice.org.in';
+        $this->apiBaseUrl = 'http://localhost:8080';
         $this->apiKey = config('services.transaction_verifier.key');
         $this->network = config('services.transaction_verifier.network', 'bsc_testnet');
     }
@@ -142,7 +142,7 @@ class TransactionVerificationService
     private function getCompanyWalletAddress()
     {
         // You can store this in system settings or config
-        return SystemSetting::getValue('company_usdt_wallet', '0x5CE2C945eeD9FBA974363fF028D86ed641b7b185');
+        return SystemSetting::getValue('usdt_bep20_wallet', '0xfc57a53793da5669c1627ad3605b7672a22d1777');
     }
 
     /**
