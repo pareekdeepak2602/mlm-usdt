@@ -31,14 +31,19 @@ class AuthController extends Controller
     
     public function register(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:100',
-            'email' => 'required|string|email|max:150|unique:users',
-            'password' => 'required|string|min:6|confirmed',
-            'phone' => 'nullable|string|max:20',
-            'referral_code' => 'nullable|string|exists:users,referral_code',
-            'terms' => 'required',
-        ]);
+       $validator = Validator::make($request->all(), [
+    'name' => [
+        'required',
+        'string',
+        'max:100',
+        'regex:/^[A-Za-z0-9\s\-_\.]+$/', // ✅ Only letters, numbers, spaces, dash, underscore, dot
+    ],
+    'email' => 'required|string|email|max:150|unique:users',
+    'password' => 'required|string|min:6|confirmed',
+    'phone' => 'nullable|string|max:20',
+    'referral_code' => 'nullable|string|exists:users,referral_code',
+    'terms' => 'required',
+]);
         
         if ($validator->fails()) {
             return redirect()->back()
@@ -51,7 +56,7 @@ class AuthController extends Controller
         $user = User::create([
             'referral_code' => User::generateReferralCode(),
             'referred_by' => $referralCode,
-            'name' => $request->input('name'),
+            'name' => strip_tags($request->input('name')), // 🚀 Removes any HTML/script completely
             'email' => $request->input('email'),
             'password' => Hash::make($request->input('password')),
             'phone' => $request->input('phone'),

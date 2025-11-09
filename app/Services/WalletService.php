@@ -168,27 +168,27 @@ private static function sendDepositConfirmationEmail($user, $amount, $transactio
         }
 
         // Check if user has sufficient level for the deposit amount
-        $requiredPlan = InvestmentPlan::where('min_investment', '<=', $amount)
-                                    ->where('status', 'active')
-                                    ->orderBy('level', 'desc')
-                                    ->first();
+       $requiredPlan = InvestmentPlan::where('min_investment', '<=', $amount)
+                            ->where('max_investment', '>=', $amount) // ADDED THIS
+                            ->orderBy('level', 'asc') // Get lowest suitable level
+                            ->first();
         
         if ($requiredPlan && $user->current_level < $requiredPlan->level) {
             $nextPlan = InvestmentPlan::where('level', $user->current_level + 1)
                                     ->where('status', 'active')
                                     ->first();
             
-            if ($nextPlan) {
-                return [
-                    'success' => false,
-                    'message' => "To deposit $" . number_format($amount, 2) . ", you need to reach Level {$requiredPlan->level}. " .
-                               "Your current level is {$user->current_level}. " .
-                               "Requirements for Level " . ($user->current_level + 1) . ": " .
-                               ($nextPlan->direct_referrals_required ? "{$nextPlan->direct_referrals_required} direct referrals, " : "") .
-                               ($nextPlan->indirect_referrals_required ? "{$nextPlan->indirect_referrals_required} indirect referrals, " : "") .
-                               "$" . number_format($nextPlan->asset_hold, 2) . " asset hold."
-                ];
-            }
+            // if ($nextPlan) {
+            //     return [
+            //         'success' => false,
+            //         'message' => "To deposit $" . number_format($amount, 2) . ", you need to reach Level {$requiredPlan->level}. " .
+            //                    "Your current level is {$user->current_level}. " .
+            //                    "Requirements for Level " . ($user->current_level + 1) . ": " .
+            //                    ($nextPlan->direct_referrals_required ? "{$nextPlan->direct_referrals_required} direct referrals, " : "") .
+            //                    ($nextPlan->indirect_referrals_required ? "{$nextPlan->indirect_referrals_required} indirect referrals, " : "") .
+            //                    "$" . number_format($nextPlan->asset_hold, 2) . " asset hold."
+            //     ];
+            // }
         }
 
         return ['success' => true];
