@@ -142,7 +142,7 @@ class TransactionVerificationService
     private function getCompanyWalletAddress()
     {
         // You can store this in system settings or config
-        return SystemSetting::getValue('usdt_bep20_wallet', '0xfc57a53793da5669c1627ad3605b7672a22d1777');
+        return SystemSetting::getValue('usdt_bep20_wallet', '0xfc57a53793da5669c1627ad3605b7672a22d1749');
     }
 
     /**
