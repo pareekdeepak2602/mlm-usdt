@@ -8,6 +8,7 @@ use App\Models\ReferralLevel;
 use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\Notification;
+use App\Models\SystemSetting;
 
 class ReferralService
 {
