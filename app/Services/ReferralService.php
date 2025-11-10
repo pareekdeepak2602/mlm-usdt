@@ -171,4 +171,61 @@ class ReferralService
 
         self::processUpperLevelBonuses($upperReferrer, $referredId, $amount, $type, $level + 1);
     }
+
+     public static function processActivationCommission($userId, $activationAmount)
+    {
+        $user = User::find($userId);
+        if (!$user || !$user->referred_by) {
+            return;
+        }
+        
+        // Find direct referrer
+        $referrer = User::where('referral_code', $user->referred_by)->first();
+        if (!$referrer) {
+            return;
+        }
+        
+        $commissionPercentage = SystemSetting::getValue('referral_activation_bonus', 10);
+        $commissionAmount = $activationAmount * ($commissionPercentage / 100);
+        
+        DB::transaction(function () use ($referrer, $commissionAmount, $user) {
+            
+            $wallet = $referrer->wallet;
+            if (!$wallet) {
+                $wallet = Wallet::create(['user_id' => $referrer->id]);
+            }
+            
+            // Add commission to referral balance
+            $wallet->referral_balance += $commissionAmount;
+            $wallet->total_income += $commissionAmount;
+            $wallet->save();
+            
+            // Create transaction record
+            Transaction::create([
+                'user_id' => $referrer->id,
+                'txn_id' => Transaction::generateTxnId(),
+                'txn_type' => 'referral',
+                'amount' => $commissionAmount,
+                'status' => 'completed',
+                'details' => "Level A activation bonus from {$user->name}",
+            ]);
+            
+            // Create referral record
+            Referral::create([
+                'referrer_id' => $referrer->id,
+                'referred_id' => $user->id,
+                'level_number' => 1,
+                'bonus_amount' => $commissionAmount,
+                'status' => 'active',
+            ]);
+            
+            // Create notification
+            Notification::create([
+                'user_id' => $referrer->id,
+                'title' => 'Referral Bonus Received',
+                'message' => "You received " . number_format($commissionAmount, 2) . " USDT as Level A activation bonus from {$user->name}",
+                'type' => 'success'
+            ]);
+        });
+    }   
 }

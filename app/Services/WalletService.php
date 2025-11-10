@@ -59,8 +59,8 @@ class WalletService
             $user->save();
             
             // Process referral bonus for activation
-            ReferralService::processReferralBonus($userId, $amount, 'activation');
-            
+            //ReferralService::processReferralBonus($userId, $amount, 'activation');
+             ReferralService::processActivationCommission($userId, $amount);
             Notification::create([
                 'user_id' => $userId,
                 'title' => 'Account Activated',

@@ -65,11 +65,6 @@ class InvestmentService
                 'status' => 'active',
             ]);
             
-            // Process referral bonus if this is the first investment
-            if ($user->investments()->count() === 1) {
-                ReferralService::processReferralBonus($user->id, $amount, 'investment');
-            }
-            
             Notification::create([
                 'user_id' => $user->id,
                 'title' => 'Investment Created',
@@ -85,183 +80,196 @@ class InvestmentService
         });
     }
     
-  public static function processDailyIncome($testMode = false, $specificDate = null, $specificUser = null)
-{
-    try {
-        $processingDate = $specificDate ? Carbon::parse($specificDate) : now();
-        $dateString = $processingDate->format('Y-m-d');
-        
-        Log::info("Starting daily income processing based on user level and deposit", [
-            'date' => $dateString,
-            'test_mode' => $testMode,
-            'specific_user' => $specificUser
-        ]);
-        
-        // Get all active users with deposit balance
-        $query = User::with(['wallet'])
-                    ->where('status', 'active')
-                    ->where('activation_amount', '>', 0)
-                    ->whereHas('wallet', function($q) {
-                        $q->where('deposit_balance', '>', 0);
-                    });
-        
-        if ($specificUser) {
-            $query->where('id', $specificUser);
-        }
-        
-        $activeUsers = $query->get();
-        
-        $stats = [
-            'total_users' => $activeUsers->count(),
-            'income_processed' => 0,
-            'total_amount' => 0,
-            'success' => true,
-            'message' => 'Processing completed'
-        ];
-        
-        if ($activeUsers->isEmpty()) {
-            Log::info("No active users found for daily income processing");
-            return $stats;
-        }
-        
-        foreach ($activeUsers as $user) {
-            try {
-                // Check if income already processed for today
-                $existingIncome = DailyIncome::where('user_id', $user->id)
-                                            ->where('income_date', $dateString)
-                                            ->first();
-                
-                if ($existingIncome) {
-                    continue; // Already processed today
-                }
-                
-                // Get user's current plan based on level
-                $currentPlan = InvestmentPlan::where('level', $user->current_level)
-                                           ->where('status', 'active')
-                                           ->first();
-                
-                if (!$currentPlan) {
-                    Log::warning("No investment plan found for user level", [
-                        'user_id' => $user->id,
-                        'level' => $user->current_level
-                    ]);
-                    continue;
-                }
-                
-                // Calculate daily income based on deposit balance and plan percentage
-                $depositBalance = $user->wallet ? $user->wallet->deposit_balance : 0;
-                
-                if ($depositBalance <= 0) {
-                    continue;
-                }
-                
-                $dailyIncome = $depositBalance * ($currentPlan->daily_percentage / 100);
-                
-                if ($dailyIncome <= 0) {
-                    continue;
-                }
-                
-                if ($testMode) {
-                    // Test mode - just log what would happen
-                    Log::info("TEST MODE: Would process daily income", [
-                        'user_id' => $user->id,
-                        'level' => $user->current_level,
-                        'deposit_balance' => $depositBalance,
-                        'daily_percentage' => $currentPlan->daily_percentage,
-                        'daily_income' => $dailyIncome,
-                        'date' => $dateString
-                    ]);
+    public static function processDailyIncome($testMode = false, $specificDate = null, $specificUser = null)
+    {
+        try {
+            $processingDate = $specificDate ? Carbon::parse($specificDate) : now();
+            $dateString = $processingDate->format('Y-m-d');
+            
+            Log::info("Starting daily income processing based on user level and deposit", [
+                'date' => $dateString,
+                'test_mode' => $testMode,
+                'specific_user' => $specificUser
+            ]);
+            
+            // Get all active users with deposit balance
+            $query = User::with(['wallet'])
+                        ->where('status', 'active')
+                        ->where('activation_amount', '>', 0)
+                        ->whereHas('wallet', function($q) {
+                            $q->where('deposit_balance', '>', 0);
+                        });
+            
+            if ($specificUser) {
+                $query->where('id', $specificUser);
+            }
+            
+            $activeUsers = $query->get();
+            
+            $stats = [
+                'total_users' => $activeUsers->count(),
+                'income_processed' => 0,
+                'total_amount' => 0,
+                'success' => true,
+                'message' => 'Processing completed'
+            ];
+            
+            if ($activeUsers->isEmpty()) {
+                Log::info("No active users found for daily income processing");
+                return $stats;
+            }
+            
+            foreach ($activeUsers as $user) {
+                try {
+                    // Check if income already processed for today
+                    $existingIncome = DailyIncome::where('user_id', $user->id)
+                                                ->where('income_date', $dateString)
+                                                ->first();
                     
-                    $stats['income_processed']++;
-                    $stats['total_amount'] += $dailyIncome;
-                    continue;
-                }
-                
-                // Real processing within transaction
-                DB::transaction(function () use ($user, $dailyIncome, $dateString, $currentPlan, $depositBalance, &$stats) {
-                    // Create daily income record with new structure
-                    DailyIncome::create([
-                        'user_id' => $user->id,
-                        'investment_id' => null, // Now allowed to be NULL
-                        'level' => $user->current_level, // New field
-                        'amount' => $dailyIncome,
-                        'income_date' => $dateString,
-                        'calculation_type' => 'level_based', // New field
-                        'details' => json_encode([
-                            'level' => $user->current_level,
-                            'plan_name' => $currentPlan->name,
-                            'daily_percentage' => $currentPlan->daily_percentage,
-                            'deposit_balance' => $depositBalance,
-                            'calculation_type' => 'level_based'
-                        ])
-                    ]);
-                    
-                    // Update user wallet
-                    if ($user->wallet) {
-                        $user->wallet->earning_balance += $dailyIncome;
-                        $user->wallet->total_income += $dailyIncome;
-                        $user->wallet->save();
+                    if ($existingIncome) {
+                        continue; // Already processed today
                     }
                     
-                    // Create transaction record
-                    Transaction::create([
-                        'user_id' => $user->id,
-                        'txn_id' => Transaction::generateTxnId(),
-                        'txn_type' => 'income',
-                        'amount' => $dailyIncome,
-                        'status' => 'completed',
-                        'details' => "Daily income from Level {$user->current_level} - {$currentPlan->name} ({$currentPlan->daily_percentage}%)",
-                    ]);
+                    // Get user's current plan based on level
+                    $currentPlan = InvestmentPlan::where('level', $user->current_level)
+                                               ->where('status', 'active')
+                                               ->first();
                     
-                    // Create notification
-                    Notification::create([
-                        'user_id' => $user->id,
-                        'title' => 'Daily Income Received',
-                        'message' => "You received " . number_format($dailyIncome, 2) . " USDT daily income from your Level {$user->current_level} investment",
-                        'type' => 'success'
-                    ]);
+                    if (!$currentPlan) {
+                        Log::warning("No investment plan found for user level", [
+                            'user_id' => $user->id,
+                            'level' => $user->current_level
+                        ]);
+                        continue;
+                    }
                     
-                    $stats['income_processed']++;
-                    $stats['total_amount'] += $dailyIncome;
+                    // Calculate daily income based on deposit balance and plan percentage
+                    $depositBalance = $user->wallet ? $user->wallet->deposit_balance : 0;
                     
-                    Log::info("Daily income processed for user", [
-                        'user_id' => $user->id,
-                        'level' => $user->current_level,
-                        'deposit_balance' => $depositBalance,
-                        'daily_income' => $dailyIncome,
-                        'date' => $dateString,
-                        'calculation_type' => 'level_based'
+                    if ($depositBalance <= 0) {
+                        
+                        continue;
+                    }
+                    
+                    $dailyIncome = $depositBalance * ($currentPlan->daily_percentage / 100);
+                    
+                    if ($dailyIncome <= 0) {
+                        
+                        continue;
+                    }
+                    
+                    if ($testMode) {
+                        // Test mode - just log what would happen
+                        Log::info("TEST MODE: Would process daily income", [
+                            'user_id' => $user->id,
+                            'level' => $user->current_level,
+                            'deposit_balance' => $depositBalance,
+                            'daily_percentage' => $currentPlan->daily_percentage,
+                            'daily_income' => $dailyIncome,
+                            'date' => $dateString
+                        ]);
+                        
+                        $stats['income_processed']++;
+                        $stats['total_amount'] += $dailyIncome;
+                        continue;
+                    }
+                    
+                    // Real processing within transaction
+                    DB::transaction(function () use ($user, $dailyIncome, $dateString, $currentPlan, $depositBalance, &$stats) {
+                        
+                        // ✅ DISTRIBUTE DAILY INCOME TO UPLINE (NEW LOGIC)
+                        $distributedAmount = LevelReferralService::distributeDailyIncomeToUpline($user, $dailyIncome);
+                        
+                        // User gets remaining amount after upline distribution
+                        $userIncomeAmount = $dailyIncome ;
+                        
+                        // Create daily income record for user
+                        DailyIncome::create([
+                            'user_id' => $user->id,
+                            'investment_id' => null,
+                            'level' => $user->current_level,
+                            'amount' => $userIncomeAmount,
+                            'income_date' => $dateString,
+                            'calculation_type' => 'level_based',
+                            'details' => json_encode([
+                                'level' => $user->current_level,
+                                'plan_name' => $currentPlan->name,
+                                'daily_percentage' => $currentPlan->daily_percentage,
+                                'deposit_balance' => $depositBalance,
+                                'calculation_type' => 'level_based',
+                                'gross_income' => $dailyIncome,
+                                'upline_distributed' => $distributedAmount,
+                                'net_income' => $userIncomeAmount
+                            ])
+                        ]);
+                        
+                        // Update user wallet with NET income (after upline distribution)
+                        if ($user->wallet) {
+                            $user->wallet->earning_balance += $userIncomeAmount;
+                            $user->wallet->total_income += $userIncomeAmount;
+                            $user->wallet->save();
+                        }
+                        
+                        // Create transaction record for user
+                        Transaction::create([
+                            'user_id' => $user->id,
+                            'txn_id' => Transaction::generateTxnId(),
+                            'txn_type' => 'income',
+                            'amount' => $userIncomeAmount,
+                            'status' => 'completed',
+                            'details' => "Daily income from Level {$user->current_level} - {$currentPlan->name} ({$currentPlan->daily_percentage}%) - Net after upline distribution",
+                        ]);
+                        
+                        // Create notification for user
+                        Notification::create([
+                            'user_id' => $user->id,
+                            'title' => 'Daily Income Received',
+                            'message' => "You received " . number_format($userIncomeAmount, 2) . " USDT daily income from your Level {$user->current_level} investment",
+                            'type' => 'success'
+                        ]);
+                        
+                        $stats['income_processed']++;
+                        $stats['total_amount'] += $userIncomeAmount;
+                        
+                        Log::info("Daily income processed for user with upline distribution", [
+                            'user_id' => $user->id,
+                            'level' => $user->current_level,
+                            'deposit_balance' => $depositBalance,
+                            'gross_daily_income' => $dailyIncome,
+                            'upline_distributed' => $distributedAmount,
+                            'user_net_income' => $userIncomeAmount,
+                            'date' => $dateString
+                        ]);
+                    });
+                    
+                } catch (\Exception $e) {
+                    Log::error("Error processing daily income for user {$user->id}", [
+                        'error' => $e->getMessage(),
+                        'user_id' => $user->id
                     ]);
-                });
-                
-            } catch (\Exception $e) {
-                Log::error("Error processing daily income for user {$user->id}", [
-                    'error' => $e->getMessage(),
-                    'user_id' => $user->id
-                ]);
-                continue;
+                    continue;
+                }
             }
+            
+            Log::info("Daily income processing completed", $stats);
+            return $stats;
+            
+        } catch (\Exception $e) {
+            Log::error("Daily income processing failed", [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'total_users' => 0,
+                'income_processed' => 0,
+                'total_amount' => 0
+            ];
         }
-        
-        Log::info("Daily income processing completed", $stats);
-        return $stats;
-        
-    } catch (\Exception $e) {
-        Log::error("Daily income processing failed", [
-            'error' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine()
-        ]);
-        
-        return [
-            'success' => false,
-            'message' => $e->getMessage(),
-            'total_users' => 0,
-            'income_processed' => 0,
-            'total_amount' => 0
-        ];
     }
-}
     
     /**
      * Get investment statistics for reporting
