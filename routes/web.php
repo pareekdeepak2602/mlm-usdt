@@ -120,7 +120,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware(['admin.auth'])->group(function () {
         // Dashboard
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-        
+         Route::get('/profile', [AdminController::class, 'profile'])->name('profile');
+    Route::post('/profile', [AdminController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/change-password', [AdminController::class, 'changePassword'])->name('password.update');
         // User Management
         Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
         Route::get('/users/{id}', [UserManagementController::class, 'show'])->name('users.show');

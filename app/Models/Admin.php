@@ -63,4 +63,20 @@ class Admin extends Authenticatable
     {
         $this->update(['last_login_at' => now()]);
     }
+
+    /**
+     * Get formatted created at date
+     */
+    public function getJoinedDateAttribute()
+    {
+        return $this->created_at->format('M j, Y');
+    }
+
+    /**
+     * Get formatted last login date
+     */
+    public function getLastLoginFormattedAttribute()
+    {
+        return $this->last_login_at ? $this->last_login_at->format('M j, Y g:i A') : 'Never';
+    }
 }

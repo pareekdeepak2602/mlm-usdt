@@ -80,7 +80,7 @@ class AdminController extends Controller
         return view('admin.dashboard', compact('stats', 'recentUsers', 'recentWithdrawals'));
     }
 
-    public function profile()
+     public function profile()
     {
         $admin = Auth::guard('admin')->user();
         return view('admin.profile', compact('admin'));
@@ -92,11 +92,10 @@ class AdminController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:admins,email,' . $admin->id,
             'phone' => 'nullable|string|max:20',
         ]);
 
-        $admin->update($request->only(['name', 'email', 'phone']));
+        $admin->update($request->only(['name', 'phone']));
 
         return back()->with('success', 'Profile updated successfully.');
     }
@@ -120,4 +119,5 @@ class AdminController extends Controller
 
         return back()->with('success', 'Password changed successfully.');
     }
+    
 }

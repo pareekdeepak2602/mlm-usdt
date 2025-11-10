@@ -50,6 +50,9 @@
 <a href="{{ route('admin.level-commissions.index') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white {{ request()->routeIs('admin.level-commissions.*') ? 'bg-gray-700' : '' }}">
     <i class="fas fa-sitemap mr-2"></i>Level Commissions
 </a>
+ <a href="{{ route('admin.profile') }}" class="flex items-center py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white {{ request()->routeIs('admin.profile') ? 'bg-gray-700 text-white font-semibold' : 'text-gray-300' }}">
+                <i class="fas fa-user-edit mr-3 w-5"></i>My Profile
+            </a>
         <a href="{{ route('admin.settings.index') }}" class="flex items-center py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 hover:text-white {{ request()->routeIs('admin.settings.*') ? 'bg-gray-700 text-white font-semibold' : 'text-gray-300' }}">
             <i class="fas fa-cog mr-3 w-5"></i>System Settings
         </a>
