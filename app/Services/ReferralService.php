@@ -9,7 +9,7 @@ use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\Notification;
 use App\Models\SystemSetting;
-
+use Illuminate\Support\Facades\DB;
 class ReferralService
 {
     public static function processReferral($user)
