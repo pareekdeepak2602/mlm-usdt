@@ -83,7 +83,11 @@ class InvestmentService
     public static function processDailyIncome($testMode = false, $specificDate = null, $specificUser = null)
     {
         try {
-            $processingDate = $specificDate ? Carbon::parse($specificDate) : now();
+            $timezone = 'Asia/Kolkata';
+        
+            $processingDate = $specificDate 
+        ? Carbon::parse($specificDate)->timezone($timezone) 
+        : Carbon::now($timezone); // ✅ Use Carbon::now() with timezone
             $dateString = $processingDate->format('Y-m-d');
             
             Log::info("Starting daily income processing based on user level and deposit", [
