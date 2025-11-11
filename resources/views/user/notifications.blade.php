@@ -140,7 +140,7 @@
                                             <p class="mb-1 text-gray-600">{{ $notification->message }}</p>
                                             <small class="text-muted">
                                                 <i class="fas fa-clock"></i> {{ $notification->created_at->diffForHumans() }}
-                                                • {{ $notification->created_at->format('M d, Y \a\t h:i A') }}
+                                                • {{ $notification->created_at->setTimeZone('Asia/Kolkata')->format('M d, Y \a\t h:i A') }}
                                             </small>
                                         </div>
                                         <div class="flex-shrink-0">

@@ -59,13 +59,13 @@
                         <div>
                             <dt class="text-sm font-medium text-gray-500">Created Date</dt>
                             <dd class="text-sm text-gray-900 mt-1">
-                                {{ $transaction->created_at->format('M d, Y \\a\\t H:i') }}
+                                {{ $transaction->created_at->setTimeZone('Asia/Kolkata')->format('M d, Y \\a\\t H:i') }}
                             </dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-gray-500">Last Updated</dt>
                             <dd class="text-sm text-gray-900 mt-1">
-                                {{ $transaction->updated_at->format('M d, Y \\a\\t H:i') }}
+                                {{ $transaction->updated_at->setTimeZone('Asia/Kolkata')->format('M d, Y \\a\\t H:i') }}
                             </dd>
                         </div>
                     </dl>

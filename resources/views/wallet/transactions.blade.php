@@ -138,7 +138,7 @@
                                     @foreach($transactions as $transaction)
                                         <tr>
                                             <td style="color: var(--text-primary);">
-                                                <div class="d-none d-md-block">{{ $transaction->created_at->format('M d, Y H:i') }}</div>
+                                                <div class="d-none d-md-block">{{ $transaction->created_at->setTimeZone('Asia/Kolkata')->format('M d, Y H:i') }}</div>
                                                 <div class="d-md-none">
                                                     <div>{{ $transaction->created_at->format('M d, Y') }}</div>
                                                     <small class="text-muted">{{ $transaction->created_at->format('H:i') }}</small>

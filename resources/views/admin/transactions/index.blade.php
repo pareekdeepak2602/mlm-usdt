@@ -75,7 +75,7 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ $transaction->created_at->format('M d, Y H:i') }}
+                            {{ $transaction->created_at->setTimeZone('Asia/Kolkata')->format('M d, Y H:i') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <a href="{{ route('admin.transactions.show', $transaction->id) }}" class="text-blue-600 hover:text-blue-900">View</a>

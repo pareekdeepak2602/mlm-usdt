@@ -65,7 +65,7 @@
                             <table class="table table-bordered" style="background: var(--card-bg); color: var(--text-primary);">
                                 <tr>
                                     <th style="background: var(--bg-secondary); color: var(--text-primary); width: 40%;">Date & Time</th>
-                                    <td style="color: var(--text-primary);">{{ $transaction->created_at->format('M d, Y \a\t h:i A') }}</td>
+                                    <td style="color: var(--text-primary);">{{ $transaction->created_at->setTimeZone('Asia/Kolkata')->format('M d, Y \a\t h:i A') }}</td>
                                 </tr>
                                 <tr>
                                     <th style="background: var(--bg-secondary); color: var(--text-primary);">BSC Transaction Hash</th>
@@ -88,7 +88,7 @@
                                 </tr>
                                 <tr>
                                     <th style="background: var(--bg-secondary); color: var(--text-primary);">Updated At</th>
-                                    <td style="color: var(--text-primary);">{{ $transaction->updated_at->format('M d, Y \a\t h:i A') }}</td>
+                                    <td style="color: var(--text-primary);">{{ $transaction->updated_at->setTimeZone('Asia/Kolkata')->format('M d, Y \a\t h:i A') }}</td>
                                 </tr>
                             </table>
                         </div>
