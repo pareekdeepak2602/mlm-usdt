@@ -68,7 +68,7 @@ class WalletService
                 'type' => 'success'
             ]);
         }
-         LevelReferralService::processLevelReferralCommission($userId, $amount);
+        // LevelReferralService::processLevelReferralCommission($userId, $amount);
         Notification::create([
             'user_id' => $userId,
             'title' => 'Deposit Received',
