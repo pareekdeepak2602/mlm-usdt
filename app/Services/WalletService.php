@@ -248,7 +248,7 @@ private static function sendDepositConfirmationEmail($user, $amount, $transactio
         return ['success' => true, 'message' => 'Bonus added successfully'];
     }
     
-    public static function getBalance($userId)
+   public static function getBalance($userId)
     {
         $user = User::find($userId);
         if (!$user) {
@@ -260,7 +260,9 @@ private static function sendDepositConfirmationEmail($user, $amount, $transactio
                 'total_balance' => 0,
                 'asset_hold' => 0,
                 'total_withdrawn' => 0,
-                'withdrawable_balance' => 0
+                'withdrawable_balance' => 0,
+                'profit_percentage' => 0,
+                'is_asset_hold_locked' => false
             ];
         }
 
@@ -271,23 +273,90 @@ private static function sendDepositConfirmationEmail($user, $amount, $transactio
 
         $totalBalance = $wallet->deposit_balance + $wallet->earning_balance + $wallet->referral_balance;
         
-        // Calculate asset hold based on user's current level from investment_plans
-        $assetHold = self::getAssetHoldByLevel($user->current_level);
+        // NEW LOGIC: Calculate profit percentage and asset hold lock
+        $assetHoldInfo = self::calculateAssetHoldLock($user, $wallet);
+        $assetHold = $assetHoldInfo['asset_hold'];
+        $isAssetHoldLocked = $assetHoldInfo['is_locked'];
+        $profitPercentage = $assetHoldInfo['profit_percentage'];
         
-        // Withdrawable balance = total balance - asset hold (cannot be negative)
-        $withdrawableBalance = max(0, $totalBalance - $assetHold);
+        // Withdrawable balance calculation based on new logic
+        if ($isAssetHoldLocked) {
+            // Asset hold is locked - can only withdraw above asset hold
+            $withdrawableBalance = max(0, $totalBalance - $assetHold);
+        } else {
+            // Asset hold NOT locked - can withdraw everything
+            $withdrawableBalance = $totalBalance;
+        }
 
         return [
             'deposit_balance' => $wallet->deposit_balance,
             'earning_balance' => $wallet->earning_balance,
             'referral_balance' => $wallet->referral_balance,
-            'available_balance' => $totalBalance, // Total available without considering asset hold
+            'available_balance' => $totalBalance,
             'total_balance' => $totalBalance,
             'asset_hold' => $assetHold,
             'total_withdrawn' => $wallet->total_withdrawn,
-            'withdrawable_balance' => $withdrawableBalance // Actual amount user can withdraw
+            'withdrawable_balance' => $withdrawableBalance,
+            'profit_percentage' => $profitPercentage,
+            'is_asset_hold_locked' => $isAssetHoldLocked
         ];
     }
+
+    /**
+     * NEW METHOD: Calculate asset hold lock based on 50% profit rule
+     */
+    private static function calculateAssetHoldLock(User $user, Wallet $wallet)
+    {
+        $currentLevel = $user->current_level;
+        $requiredAssetHold = self::getAssetHoldByLevel($currentLevel);
+        
+        // If no asset hold required for this level, return zero
+        if ($requiredAssetHold <= 0) {
+            return [
+                'asset_hold' => 0,
+                'is_locked' => false,
+                'profit_percentage' => 0
+            ];
+        }
+
+        $totalBalance = $wallet->deposit_balance + $wallet->earning_balance + $wallet->referral_balance;
+        
+        // Calculate profit: Total balance minus total deposits (approximated by deposit_balance)
+        // This is a simplified calculation - you might want to track actual deposits separately
+        $totalDeposits = $wallet->deposit_balance; // Approximation
+        $profit = max(0, $totalBalance - $totalDeposits);
+        
+        // Calculate profit percentage
+        $profitPercentage = $totalDeposits > 0 ? ($profit / $totalDeposits) * 100 : 0;
+        
+        // Asset hold is locked only when profit reaches 50%
+        $isAssetHoldLocked = $profitPercentage >= 50;
+
+        return [
+            'asset_hold' => $requiredAssetHold,
+            'is_locked' => $isAssetHoldLocked,
+            'profit_percentage' => $profitPercentage
+        ];
+    }
+
+    /**
+     * Check if user can withdraw specified amount considering new asset hold logic
+     */
+    public static function canWithdraw($userId, $amount)
+    {
+        $balance = self::getBalance($userId);
+        return $amount <= $balance['withdrawable_balance'];
+    }
+
+    /**
+     * Get maximum withdrawable amount for user
+     */
+    public static function getMaxWithdrawableAmount($userId)
+    {
+        $balance = self::getBalance($userId);
+        return $balance['withdrawable_balance'];
+    }
+
 
     /**
      * Get asset hold requirement based on user's current level
@@ -316,19 +385,19 @@ private static function sendDepositConfirmationEmail($user, $amount, $transactio
     /**
      * Check if user can withdraw specified amount considering asset hold
      */
-    public static function canWithdraw($userId, $amount)
-    {
-        $balance = self::getBalance($userId);
-        return $amount <= $balance['withdrawable_balance'];
-    }
+    // public static function canWithdraw($userId, $amount)
+    // {
+    //     $balance = self::getBalance($userId);
+    //     return $amount <= $balance['withdrawable_balance'];
+    // }
 
     /**
      * Get maximum withdrawable amount for user
      */
-    public static function getMaxWithdrawableAmount($userId)
-    {
-        $balance = self::getBalance($userId);
-        return $balance['withdrawable_balance'];
-    }
+    // public static function getMaxWithdrawableAmount($userId)
+    // {
+    //     $balance = self::getBalance($userId);
+    //     return $balance['withdrawable_balance'];
+    // }
     
 }

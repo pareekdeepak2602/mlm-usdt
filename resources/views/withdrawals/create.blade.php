@@ -66,12 +66,70 @@
                         </div>
                     </div>
                     
+                    <!-- Profit & Asset Hold Status -->
+                    @if($balance['asset_hold'] > 0)
+                    <div class="alert alert-warning mt-3">
+                        <h6 class="alert-heading"><i class="fas fa-chart-line me-2"></i>Profit & Asset Hold Status</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-2">
+                                    <strong>Current Profit:</strong> 
+                                    <span class="{{ $balance['profit_percentage'] >= 50 ? 'text-success' : 'text-info' }}">
+                                        {{ number_format($balance['profit_percentage'], 2) }}%
+                                    </span>
+                                </p>
+                                <p class="mb-2">
+                                    <strong>Asset Hold Status:</strong> 
+                                    @if($balance['is_asset_hold_locked'])
+                                        <span class="text-danger"><i class="fas fa-lock me-1"></i>LOCKED</span>
+                                    @else
+                                        <span class="text-success"><i class="fas fa-lock-open me-1"></i>UNLOCKED</span>
+                                    @endif
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-2">
+                                    @if($balance['is_asset_hold_locked'])
+                                        <i class="fas fa-info-circle me-1 text-danger"></i>
+                                        <strong>Asset hold of ${{ number_format($balance['asset_hold'], 2) }} is LOCKED.</strong><br>
+                                        You can only withdraw amounts above this requirement.
+                                    @else
+                                        <i class="fas fa-info-circle me-1 text-success"></i>
+                                        <strong>Asset hold is UNLOCKED.</strong><br>
+                                        You can withdraw your entire balance until you reach 50% profit.
+                                    @endif
+                                </p>
+                            </div>
+                        </div>
+                        <div class="progress mt-2" style="height: 20px;">
+                            <div class="progress-bar 
+                                @if($balance['profit_percentage'] < 25) bg-info
+                                @elseif($balance['profit_percentage'] < 50) bg-warning
+                                @else bg-success
+                                @endif" 
+                                role="progressbar" 
+                                style="width: {{ min($balance['profit_percentage'], 100) }}%"
+                                aria-valuenow="{{ $balance['profit_percentage'] }}" 
+                                aria-valuemin="0" 
+                                aria-valuemax="100">
+                                {{ number_format($balance['profit_percentage'], 1) }}% Profit
+                            </div>
+                        </div>
+                        <small class="text-muted mt-2 d-block">
+                            Asset hold locks at 50% profit. Current progress: {{ number_format($balance['profit_percentage'], 2) }}% / 50%
+                        </small>
+                    </div>
+                    @endif
+
                     <!-- Asset Hold Explanation -->
                     @if($balance['asset_hold'] > 0)
                     <div class="alert alert-info mt-3">
                         <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Asset Hold Information</h6>
-                        <p class="mb-2">As a <strong>Level {{ Auth::user()->current_level }}</strong> member, you need to maintain <strong>${{ number_format($balance['asset_hold'], 2) }}</strong> in your account to preserve your current level benefits and prevent downgrading.</p>
-                        <p class="mb-0"><strong>Note:</strong> You can only withdraw amounts above this asset hold requirement.</p>
+                        <p class="mb-2">As a <strong>Level {{ Auth::user()->current_level }}</strong> member, you need to maintain <strong>${{ number_format($balance['asset_hold'], 2) }}</strong> in your account to preserve your current level benefits.</p>
+                        <p class="mb-0">
+                            <strong>New Rule:</strong> Asset hold only locks when you reach <strong>50% profit</strong>. 
+                            Until then, you can withdraw your entire balance.
+                        </p>
                     </div>
                     @endif
 
@@ -215,8 +273,16 @@
                                 <li>Withdrawals are processed within 24-48 hours</li>
                                 <li>Withdrawal fee: {{ $withdrawalFee }}% will be deducted</li>
                                 <li>Minimum withdrawal amount: ${{ number_format($minWithdrawal, 2) }}</li>
-                                <li>Asset hold requirement: ${{ number_format($balance['asset_hold'] ?? 0, 2) }} for Level {{ Auth::user()->current_level }}</li>
+                                <li>
+                                    Asset hold: ${{ number_format($balance['asset_hold'] ?? 0, 2) }} for Level {{ Auth::user()->current_level }}
+                                    @if($balance['is_asset_hold_locked'])
+                                        <span class="badge bg-danger">LOCKED</span>
+                                    @else
+                                        <span class="badge bg-success">UNLOCKED</span>
+                                    @endif
+                                </li>
                                 <li>Maximum withdrawable amount: ${{ number_format($balance['withdrawable_balance'] ?? 0, 2) }}</li>
+                                <li>Current profit: {{ number_format($balance['profit_percentage'] ?? 0, 2) }}% (Locks at 50%)</li>
                                 <li>Ensure your USDT BEP20 address is correct</li>
                                 <li>Withdrawals are sent via Binance Smart Chain (BEP20)</li>
                             </ul>
@@ -257,13 +323,32 @@
                         <strong class="text-success">Total Balance:</strong> 
                         <span class="float-end text-success">${{ number_format($balance['total_balance'] ?? 0, 2) }}</span>
                     </div>
-                    <div class="balance-item mb-2">
-                        <strong class="text-warning">Asset Hold (Level {{ Auth::user()->current_level }}):</strong> 
-                        <span class="float-end text-warning">-${{ number_format($balance['asset_hold'] ?? 0, 2) }}</span>
-                    </div>
+                    
+                    @if($balance['asset_hold'] > 0)
+                        <div class="balance-item mb-2">
+                            <strong class="{{ $balance['is_asset_hold_locked'] ? 'text-danger' : 'text-warning' }}">
+                                Asset Hold (Level {{ Auth::user()->current_level }}):
+                            </strong> 
+                            <span class="float-end {{ $balance['is_asset_hold_locked'] ? 'text-danger' : 'text-warning' }}">
+                                ${{ number_format($balance['asset_hold'], 2) }}
+                                @if($balance['is_asset_hold_locked'])
+                                    <i class="fas fa-lock ms-1"></i>
+                                @else
+                                    <i class="fas fa-lock-open ms-1"></i>
+                                @endif
+                            </span>
+                        </div>
+                    @endif
+                    
                     <div class="balance-item mb-2">
                         <strong class="text-primary">Available for Withdrawal:</strong> 
                         <span class="float-end text-primary">${{ number_format($balance['withdrawable_balance'] ?? 0, 2) }}</span>
+                    </div>
+                    
+                    <!-- Profit Information -->
+                    <div class="balance-item mb-2">
+                        <strong class="text-info">Current Profit:</strong> 
+                        <span class="float-end text-info">{{ number_format($balance['profit_percentage'] ?? 0, 2) }}%</span>
                     </div>
                 </div>
             </div>
@@ -303,10 +388,60 @@
                             <span class="float-end">{{ $currentPlan->indirect_referrals_required }}</span>
                         </div>
                         @endif
+                        <div class="info-item mb-2">
+                            <strong>Asset Hold Rule:</strong> 
+                            <span class="float-end text-success">Locks at 50% Profit</span>
+                        </div>
                     </div>
                     @else
                     <p class="text-muted mb-0">Level information not available.</p>
                     @endif
+                </div>
+            </div>
+
+            <!-- Profit Rules Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-success text-white">
+                    <h6 class="m-0 font-weight-bold">New Profit Rules</h6>
+                </div>
+                <div class="card-body">
+                    <div class="rules">
+                        <div class="rule-item mb-3">
+                            <div class="rule-icon bg-success text-white">
+                                <i class="fas fa-lock-open"></i>
+                            </div>
+                            <div class="rule-content">
+                                <strong>Before 50% Profit</strong>
+                                <p class="mb-0 small">Asset hold is UNLOCKED. You can withdraw your entire balance.</p>
+                            </div>
+                        </div>
+                        <div class="rule-item mb-3">
+                            <div class="rule-icon bg-danger text-white">
+                                <i class="fas fa-lock"></i>
+                            </div>
+                            <div class="rule-content">
+                                <strong>After 50% Profit</strong>
+                                <p class="mb-0 small">Asset hold LOCKS. You can only withdraw amounts above asset hold.</p>
+                            </div>
+                        </div>
+                        <div class="rule-item">
+                            <div class="rule-icon bg-info text-white">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="rule-content">
+                                <strong>Current Status</strong>
+                                <p class="mb-0 small">
+                                    Profit: {{ number_format($balance['profit_percentage'] ?? 0, 2) }}%<br>
+                                    Status: 
+                                    @if($balance['is_asset_hold_locked'])
+                                        <span class="text-danger">LOCKED</span>
+                                    @else
+                                        <span class="text-success">UNLOCKED</span>
+                                    @endif
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -357,7 +492,7 @@
                 <div class="card-body text-center">
                     <i class="fas fa-headset fa-2x text-primary mb-3"></i>
                     <p class="mb-3">If you have questions about withdrawals, contact our support team.</p>
-                    <a href="#" class="btn btn-outline-primary btn-sm">
+                    <a href="{{ route('support.index') }}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-envelope me-2"></i> Contact Support
                     </a>
                 </div>
@@ -402,6 +537,33 @@
 .quick-amount:hover {
     transform: translateY(-2px);
 }
+.rule-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+.rule-icon {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    flex-shrink: 0;
+    font-size: 16px;
+}
+.rule-content {
+    flex: 1;
+}
+.progress {
+    border-radius: 10px;
+}
+.progress-bar {
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 12px;
+}
 </style>
 @endpush
 
@@ -414,6 +576,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const feePercentage = {{ $withdrawalFee }};
     const minWithdrawal = {{ $minWithdrawal }};
     const maxWithdrawal = {{ $balance['withdrawable_balance'] ?? 0 }};
+    const isAssetHoldLocked = {{ $balance['is_asset_hold_locked'] ? 'true' : 'false' }};
+    const assetHold = {{ $balance['asset_hold'] ?? 0 }};
+    const profitPercentage = {{ $balance['profit_percentage'] ?? 0 }};
 
     // Fee calculation function
     function calculateFee(amount) {
@@ -421,6 +586,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const netAmount = amount - fee;
         
         if (amount > 0) {
+            let statusInfo = '';
+            if (isAssetHoldLocked) {
+                statusInfo = `<small class="text-danger d-block mt-1"><i class="fas fa-lock me-1"></i>Asset Hold: $${assetHold.toFixed(2)} LOCKED</small>`;
+            } else {
+                statusInfo = `<small class="text-success d-block mt-1"><i class="fas fa-lock-open me-1"></i>Asset Hold UNLOCKED (${profitPercentage.toFixed(2)}% profit)</small>`;
+            }
+            
             feeCalculation.innerHTML = `
                 <div class="row small">
                     <div class="col-6">Withdrawal Amount:</div>
@@ -430,6 +602,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="col-12"><hr class="my-1"></div>
                     <div class="col-6"><strong>You Will Receive:</strong></div>
                     <div class="col-6 text-end text-success"><strong>$${netAmount.toFixed(2)}</strong></div>
+                    <div class="col-12">${statusInfo}</div>
                 </div>
             `;
         } else {

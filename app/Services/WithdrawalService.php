@@ -18,16 +18,23 @@ class WithdrawalService
             return ['success' => false, 'message' => 'User not found'];
         }
         
-        // Check if user can withdraw this amount considering asset hold
+        // Check if user can withdraw this amount considering NEW asset hold logic
         if (!WalletService::canWithdraw($userId, $amount)) {
             $balance = WalletService::getBalance($userId);
             $maxWithdrawable = WalletService::getMaxWithdrawableAmount($userId);
             
-            return ['success' => false, 'message' => 
-                "Insufficient withdrawable balance. " .
-                "You can withdraw maximum: {$maxWithdrawable} USDT. " .
-                "Asset Hold Requirement (Level {$user->current_level}): {$balance['asset_hold']} USDT"
-            ];
+            $message = "Insufficient withdrawable balance. ";
+            
+            if ($balance['is_asset_hold_locked']) {
+                $message .= "Asset Hold (Level {$user->current_level}) of {$balance['asset_hold']} USDT is locked. ";
+                $message .= "You can withdraw maximum: {$maxWithdrawable} USDT.";
+            } else {
+                $message .= "You can withdraw maximum: {$maxWithdrawable} USDT. ";
+                $message .= "Current profit: " . number_format($balance['profit_percentage'], 2) . "%. ";
+                $message .= "Asset hold will lock at 50% profit.";
+            }
+            
+            return ['success' => false, 'message' => $message];
         }
         
         $minWithdrawal = SystemSetting::getValue('minimum_withdrawal', 30);
@@ -71,15 +78,16 @@ class WithdrawalService
             ]);
         }
         
-        Notification::createNotification(
-            $userId,
-            'Withdrawal Requested',
-            "Your withdrawal request of {$amount} USDT has been submitted. Net amount: {$netAmount} USDT",
-            'info'
-        );
+        Notification::create([
+            'user_id' => $userId,
+            'title' => 'Withdrawal Requested',
+            'message' => "Your withdrawal request of {$amount} USDT has been submitted. Net amount: {$netAmount} USDT",
+            'type' => 'info'
+        ]);
         
         return ['success' => true, 'message' => 'Withdrawal request submitted successfully', 'withdrawal' => $withdrawal];
     }
+    
     
     public static function processWithdrawal($withdrawalId, $status, $adminNote = null)
     {
