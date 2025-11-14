@@ -26,6 +26,25 @@ use App\Http\Controllers\Admin\AdminSupportController;
 
     // Authentication Routes
     Route::get('/', [LandingPageController::class, 'index'])->name('landing');
+    Route::get('/terms', function () {
+    return view('legal.terms');
+})->name('legal.terms');
+
+Route::get('/privacy', function () {
+    return view('legal.privacy');
+})->name('legal.privacy');
+
+Route::get('/about', function () {
+    return view('legal.about');
+})->name('legal.about');
+
+Route::get('/refund-policy', function () {
+    return view('legal.refund');
+})->name('legal.refund');
+
+Route::get('/risk-disclosure', function () {
+    return view('legal.risk');
+})->name('legal.risk');
     Route::post('/contact', [LandingPageController::class, 'submitContact'])->name('contact.submit');
 
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
